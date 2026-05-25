@@ -32,7 +32,7 @@ Gwint jest zablokowany wewnątrz Witchera 3 — nie istnieje lekka, webowa wersj
 | F-01 | game-engine-core         | (foundation) silnik gry gotowy — reguły, scoring, bot, pełny zestaw abilities      | —                  | Business Logic, NFR (bot < 2s)    | ready    |
 | F-02 | data-persistence         | (foundation) warstwa persystencji — encje, migracje Flyway, połączenie z PostgreSQL | —                  | Guardrails, Access Control        | ready    |
 | F-03 | magic-link-auth-scaffold | (foundation) auth magic-link — tokeny, walidacja, wysyłka emaila przez Resend     | F-02               | Access Control, NFR (prywatność)  | proposed |
-| F-04 | frontend-scaffold        | (foundation) Vite + React + TS scaffold; routing; jedna strona "loxley-cards"    | —                  | (architectural enabler dla S-01)  | ready    |
+| F-04 | frontend-scaffold        | (foundation) Vite + React + TS scaffold; routing; jedna strona "loxley-cards"    | —                  | (architectural enabler dla S-01)  | done     |
 | S-01 | static-ui-prototype      | przejść przez wszystkie ekrany gry (menu, kampania, plansza, leader, score) i zobaczyć pełen wygląd z assetami; klikalne ale bez logiki | F-04               | US-01, US-02, NFR (duży ekran)    | proposed |
 | S-02 | interactive-local-match  | rozegrać partię w przeglądarce — drag&drop, pas, leader, wybór rzędu — na lokalnym mockowym game state w JS | S-01               | FR-004–FR-008 (warstwa UX)        | proposed |
 | S-03 | integrated-match-vs-bot  | rozegrać pełną partię vs prawdziwy bot z backendowym engine (REST API zastępuje mock) | F-01, S-02         | US-01, FR-004–FR-008              | proposed |
@@ -113,7 +113,7 @@ Stan codebase na 2026-05-25 (auto-researched + potwierdzone przez użytkownika).
 - **Blockers:** —
 - **Unknowns:** —
 - **Risk:** Niski; standardowy Vite scaffold dobrze udokumentowany. Wybór bibliotek (router, state management, drag&drop, styling) **odracza się do S-01/S-02** — tutaj tylko goły szkielet. Pułapka: scope creep ("przy okazji dodam Tailwind", "przy okazji dodam shadcn") — definicja done: pusty projekt z `npm run dev` i jedną stroną.
-- **Status:** ready
+- **Status:** done
 
 ## Slices
 
@@ -212,3 +212,4 @@ Stan codebase na 2026-05-25 (auto-researched + potwierdzone przez użytkownika).
 
 ## Done
 
+- **F-04: (foundation) Vite + React + TS scaffold istnieje; struktura projektu (folders, tsconfig, vite.config); routing (React Router lub Wouter — decyzja w `/10x-plan`); jedna strona "loxley-cards" pod `/` jako sanity-check; `npm run dev` startuje, `npm run build` produkuje statyczny output. Brak gameplay, brak assetów, brak komunikacji z backendem.** — Archived 2026-05-25 → `context/archive/2026-05-25-f-04-frontend-scaffold/`. Lesson: —.
