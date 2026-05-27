@@ -1,0 +1,31 @@
+{
+  "id": "gimped_deck",
+  "displayName": "Sherwood Gimped — Heroless Starter",
+  "leaderCardId": "leader_robin_hood_sherwood_hunter",
+  "cards": [
+    { "cardId": "peasants_of_locksley", "count": 3 },
+    { "cardId": "sherwood_brothers", "count": 3 },
+    { "cardId": "lord_walter_huntingdon", "count": 1 },
+    { "cardId": "allan_a_dale", "count": 1 },
+    { "cardId": "lady_marian", "count": 1 },
+    { "cardId": "sir_richard_lea", "count": 1 },
+
+    { "cardId": "sherwood_archers", "count": 3 },
+    { "cardId": "much_millers_son", "count": 1 },
+    { "cardId": "eleanor_archer", "count": 1 },
+    { "cardId": "annabelle_mansfield", "count": 1 },
+
+    { "cardId": "sherwood_trebuchet", "count": 2 },
+    { "cardId": "great_bow", "count": 1 },
+    { "cardId": "rebels_ram", "count": 1 },
+    { "cardId": "wooden_tower", "count": 1 },
+    { "cardId": "friar_tuck", "count": 1 },
+    { "cardId": "sherwood_engineer", "count": 2 },
+    { "cardId": "hugo_rascal", "count": 1 },
+
+    { "cardId": "icy_dawn", "count": 1 },
+    { "cardId": "sherwood_fog", "count": 1 },
+    { "cardId": "forest_storm", "count": 1 },
+    { "cardId": "sherwood_sun", "count": 1 }
+  ]
+}

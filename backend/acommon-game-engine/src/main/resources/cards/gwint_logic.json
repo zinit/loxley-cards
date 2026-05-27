@@ -1,0 +1,712 @@
+{
+  "schemaVersion": "0.1",
+  "ruleset": {
+    "id": "gwent_reference_mvp",
+    "name": "Gwent Reference MVP",
+    "description": "Referencyjny zestaw kart i efektów do szybkiego POC silnika gry karcianej inspirowanej Gwintem z Wiedźmina 3.",
+    "matchFormat": {
+      "roundsToWin": 2,
+      "maxRounds": 3,
+      "startingHandSize": 10,
+      "drawEachTurn": false,
+      "actionPerTurn": 1,
+      "allowedActions": ["PLAY_CARD", "PASS", "USE_LEADER"]
+    }
+  },
+  "rows": [
+    {
+      "code": "I",
+      "id": "CLOSE",
+      "originalName": "Close Combat",
+      "polishName": "Zwarcie",
+      "description": "Rząd dla jednostek walczących wręcz."
+    },
+    {
+      "code": "II",
+      "id": "RANGED",
+      "originalName": "Ranged Combat",
+      "polishName": "Dystans",
+      "description": "Rząd dla jednostek dystansowych."
+    },
+    {
+      "code": "III",
+      "id": "SIEGE",
+      "originalName": "Siege Combat",
+      "polishName": "Oblężenie",
+      "description": "Rząd dla jednostek oblężniczych."
+    }
+  ],
+  "abilities": [
+    {
+      "code": "HERO",
+      "originalName": "Hero",
+      "polishName": "Bohater",
+      "type": "PASSIVE",
+      "target": "SELF",
+      "description": "Karta odporna na pogodę, karty specjalne i większość efektów innych kart.",
+      "implementationNotes": "Efekty pogodowe, Scorch, Decoy, Medic i Commander's Horn nie powinny zmieniać tej karty, chyba że jawnie dopuszczasz wyjątek."
+    },
+    {
+      "code": "SPY",
+      "originalName": "Spy",
+      "polishName": "Szpieg",
+      "type": "ON_PLAY",
+      "target": "OPPONENT_BOARD",
+      "description": "Karta jest zagrywana na stronę przeciwnika. Przeciwnik dostaje jej punkty, a właściciel karty dobiera 2 karty.",
+      "implementationNotes": "Po zagraniu karta trafia do rzędu przeciwnika, ale efekt dobierania kart wykonuje gracz, który ją zagrał."
+    },
+    {
+      "code": "MEDIC",
+      "originalName": "Medic",
+      "polishName": "Medyk / Zmartwychwstanie",
+      "type": "ON_PLAY",
+      "target": "OWN_DISCARD",
+      "description": "Pozwala wybrać jednostkę z własnego stosu kart odrzuconych i natychmiast ją zagrać.",
+      "implementationNotes": "Nie pozwalaj przywracać kart specjalnych ani kart HERO, jeśli trzymasz się klasycznego modelu."
+    },
+    {
+      "code": "TIGHT_BOND",
+      "originalName": "Tight Bond",
+      "polishName": "Więź",
+      "type": "SCORING_MODIFIER",
+      "target": "SAME_CARD_IN_ROW",
+      "description": "Karty o tej samej nazwie w tym samym rzędzie wzmacniają się wzajemnie.",
+      "implementationNotes": "Najprościej: jeśli w rzędzie jest więcej niż jedna kopia tej samej karty z TIGHT_BOND, każda z nich ma podwojoną bazową siłę."
+    },
+    {
+      "code": "MORALE_BOOST",
+      "originalName": "Morale Boost",
+      "polishName": "Wysokie morale",
+      "type": "SCORING_MODIFIER",
+      "target": "OTHER_UNITS_IN_SAME_ROW",
+      "description": "Dodaje +1 siły innym jednostkom w tym samym rzędzie.",
+      "implementationNotes": "Efekt nie powinien wzmacniać samej karty, która ma MORALE_BOOST."
+    },
+    {
+      "code": "COMMANDERS_HORN",
+      "originalName": "Commander's Horn",
+      "polishName": "Róg dowódcy",
+      "type": "SPECIAL",
+      "target": "SELECTED_ROW",
+      "description": "Podwaja siłę wszystkich zwykłych jednostek w wybranym rzędzie.",
+      "implementationNotes": "Nie powinien wpływać na karty HERO. W rzędzie powinien działać tylko jeden aktywny efekt tego typu."
+    },
+    {
+      "code": "SCORCH",
+      "originalName": "Scorch",
+      "polishName": "Pożoga",
+      "type": "SPECIAL",
+      "target": "BOARD_MAX_POWER_UNITS",
+      "description": "Niszczy najmocniejsze jednostki na planszy.",
+      "implementationNotes": "W klasycznym wariancie usuwa wszystkie niebohaterskie jednostki z najwyższą aktualną siłą."
+    },
+    {
+      "code": "DECOY",
+      "originalName": "Decoy",
+      "polishName": "Manekin",
+      "type": "SPECIAL",
+      "target": "OWN_UNIT_ON_BOARD",
+      "description": "Pozwala zabrać własną jednostkę ze stołu z powrotem do ręki.",
+      "implementationNotes": "Najlepsze użycie: cofnięcie szpiega, medyka albo mocnej karty efektowej. Nie powinien działać na HERO."
+    },
+    {
+      "code": "WEATHER_CLOSE",
+      "originalName": "Biting Frost",
+      "polishName": "Trzaskający mróz",
+      "type": "WEATHER",
+      "target": "CLOSE_ROW_BOTH_PLAYERS",
+      "description": "Ustawia siłę wszystkich zwykłych jednostek w rzędzie zwarcia obu graczy na 1.",
+      "implementationNotes": "Nie wpływa na HERO. Pogoda działa symetrycznie na obu graczy."
+    },
+    {
+      "code": "WEATHER_RANGED",
+      "originalName": "Impenetrable Fog",
+      "polishName": "Gęsta mgła",
+      "type": "WEATHER",
+      "target": "RANGED_ROW_BOTH_PLAYERS",
+      "description": "Ustawia siłę wszystkich zwykłych jednostek dystansowych obu graczy na 1.",
+      "implementationNotes": "Nie wpływa na HERO. Pogoda działa symetrycznie na obu graczy."
+    },
+    {
+      "code": "WEATHER_SIEGE",
+      "originalName": "Torrential Rain",
+      "polishName": "Ulewny deszcz",
+      "type": "WEATHER",
+      "target": "SIEGE_ROW_BOTH_PLAYERS",
+      "description": "Ustawia siłę wszystkich zwykłych jednostek oblężniczych obu graczy na 1.",
+      "implementationNotes": "Nie wpływa na HERO. Pogoda działa symetrycznie na obu graczy."
+    },
+    {
+      "code": "CLEAR_WEATHER",
+      "originalName": "Clear Weather",
+      "polishName": "Czyste niebo",
+      "type": "SPECIAL",
+      "target": "ALL_WEATHER_EFFECTS",
+      "description": "Usuwa wszystkie aktywne efekty pogodowe.",
+      "implementationNotes": "Po usunięciu pogody należy przeliczyć siłę rzędów."
+    }
+  ],
+  "cards": [
+    {
+      "id": "leader_foltest_king_of_the_north",
+      "name": "Foltest: Dowódca Północy",
+      "cardType": "LEADER",
+      "faction": "NORTHERN_REALMS",
+      "description": "Dowódca Królestw Północy. Jego zdolność usuwa aktywne efekty pogodowe.",
+      "row": null,
+      "basePower": null,
+      "abilities": ["CLEAR_WEATHER"],
+      "playTarget": "GLOBAL",
+      "role": "leader",
+      "mvpImportance": "REQUIRED"
+    },
+
+    {
+      "id": "poor_fucking_infantry",
+      "name": "Biedna Pierdolona Piechota",
+      "cardType": "UNIT",
+      "faction": "NORTHERN_REALMS",
+      "description": "Słaba jednostka piechoty, która staje się groźna dopiero w większej liczbie kopii.",
+      "row": "CLOSE",
+      "basePower": 1,
+      "abilities": ["TIGHT_BOND"],
+      "playTarget": "OWN_BOARD",
+      "role": "combo_filler",
+      "mvpImportance": "OPTIONAL"
+    },
+    {
+      "id": "blue_stripes_commando",
+      "name": "Komandos Niebieskich Pasów",
+      "cardType": "UNIT",
+      "faction": "NORTHERN_REALMS",
+      "description": "Podstawowa karta combo Królestw Północy. Mocno zyskuje, gdy na stole pojawia się więcej kopii.",
+      "row": "CLOSE",
+      "basePower": 4,
+      "abilities": ["TIGHT_BOND"],
+      "playTarget": "OWN_BOARD",
+      "role": "core_combo",
+      "mvpImportance": "REQUIRED"
+    },
+    {
+      "id": "prince_stennis",
+      "name": "Książę Stennis",
+      "cardType": "UNIT",
+      "faction": "NORTHERN_REALMS",
+      "description": "Szpieg. Daje przeciwnikowi punkty, ale pozwala dobrać 2 karty.",
+      "row": "CLOSE",
+      "basePower": 5,
+      "abilities": ["SPY"],
+      "playTarget": "OPPONENT_BOARD",
+      "role": "card_advantage",
+      "mvpImportance": "REQUIRED"
+    },
+    {
+      "id": "sigismund_dijkstra",
+      "name": "Sigismund Dijkstra",
+      "cardType": "UNIT",
+      "faction": "NORTHERN_REALMS",
+      "description": "Szpieg o relatywnie niskiej sile. Bardzo cenna karta, bo daje przewagę kart przy małym zysku punktowym przeciwnika.",
+      "row": "CLOSE",
+      "basePower": 4,
+      "abilities": ["SPY"],
+      "playTarget": "OPPONENT_BOARD",
+      "role": "card_advantage",
+      "mvpImportance": "REQUIRED"
+    },
+    {
+      "id": "vernon_roche",
+      "name": "Vernon Roche",
+      "cardType": "UNIT",
+      "faction": "NORTHERN_REALMS",
+      "description": "Mocna karta bohatera w rzędzie zwarcia. Stabilne punkty odporne na większość efektów.",
+      "row": "CLOSE",
+      "basePower": 10,
+      "abilities": ["HERO"],
+      "playTarget": "OWN_BOARD",
+      "role": "high_power_safe_unit",
+      "mvpImportance": "RECOMMENDED"
+    },
+    {
+      "id": "john_natalis",
+      "name": "Jan Natalis",
+      "cardType": "UNIT",
+      "faction": "NORTHERN_REALMS",
+      "description": "Druga mocna karta bohatera w rzędzie zwarcia. Daje bezpieczne punkty.",
+      "row": "CLOSE",
+      "basePower": 10,
+      "abilities": ["HERO"],
+      "playTarget": "OWN_BOARD",
+      "role": "high_power_safe_unit",
+      "mvpImportance": "RECOMMENDED"
+    },
+    {
+      "id": "ves",
+      "name": "Ves",
+      "cardType": "UNIT",
+      "faction": "NORTHERN_REALMS",
+      "description": "Zwykła jednostka w rzędzie zwarcia. Prosta karta punktowa.",
+      "row": "CLOSE",
+      "basePower": 5,
+      "abilities": [],
+      "playTarget": "OWN_BOARD",
+      "role": "basic_points",
+      "mvpImportance": "OPTIONAL"
+    },
+    {
+      "id": "siegfried_of_denesle",
+      "name": "Zygfryd z Denesle",
+      "cardType": "UNIT",
+      "faction": "NORTHERN_REALMS",
+      "description": "Zwykła jednostka w rzędzie zwarcia. Stabilna karta punktowa bez efektu.",
+      "row": "CLOSE",
+      "basePower": 5,
+      "abilities": [],
+      "playTarget": "OWN_BOARD",
+      "role": "basic_points",
+      "mvpImportance": "OPTIONAL"
+    },
+    {
+      "id": "redanian_foot_soldier",
+      "name": "Redański piechur",
+      "cardType": "UNIT",
+      "faction": "NORTHERN_REALMS",
+      "description": "Słaba jednostka w rzędzie zwarcia. Filler do podstawowej talii.",
+      "row": "CLOSE",
+      "basePower": 1,
+      "abilities": [],
+      "playTarget": "OWN_BOARD",
+      "role": "filler",
+      "mvpImportance": "OPTIONAL"
+    },
+    {
+      "id": "yarpen_zigrin",
+      "name": "Yarpen Zigrin",
+      "cardType": "UNIT",
+      "faction": "NORTHERN_REALMS",
+      "description": "Niska karta punktowa w rzędzie zwarcia. Filler.",
+      "row": "CLOSE",
+      "basePower": 2,
+      "abilities": [],
+      "playTarget": "OWN_BOARD",
+      "role": "filler",
+      "mvpImportance": "OPTIONAL"
+    },
+
+    {
+      "id": "crinfrid_reavers_dragon_hunter",
+      "name": "Rębacze z Crinfrid",
+      "cardType": "UNIT",
+      "faction": "NORTHERN_REALMS",
+      "description": "Mocna karta dystansowa z efektem więzi. Jedna z podstawowych kart combo.",
+      "row": "RANGED",
+      "basePower": 5,
+      "abilities": ["TIGHT_BOND"],
+      "playTarget": "OWN_BOARD",
+      "role": "core_combo",
+      "mvpImportance": "REQUIRED"
+    },
+    {
+      "id": "detmold",
+      "name": "Detmold",
+      "cardType": "UNIT",
+      "faction": "NORTHERN_REALMS",
+      "description": "Stabilna karta dystansowa bez dodatkowego efektu.",
+      "row": "RANGED",
+      "basePower": 6,
+      "abilities": [],
+      "playTarget": "OWN_BOARD",
+      "role": "basic_points",
+      "mvpImportance": "OPTIONAL"
+    },
+    {
+      "id": "keira_metz",
+      "name": "Keira Metz",
+      "cardType": "UNIT",
+      "faction": "NORTHERN_REALMS",
+      "description": "Zwykła karta dystansowa. Daje solidną liczbę punktów.",
+      "row": "RANGED",
+      "basePower": 5,
+      "abilities": [],
+      "playTarget": "OWN_BOARD",
+      "role": "basic_points",
+      "mvpImportance": "OPTIONAL"
+    },
+    {
+      "id": "sabrina_glevissig",
+      "name": "Sabrina Glevissig",
+      "cardType": "UNIT",
+      "faction": "NORTHERN_REALMS",
+      "description": "Zwykła jednostka dystansowa.",
+      "row": "RANGED",
+      "basePower": 4,
+      "abilities": [],
+      "playTarget": "OWN_BOARD",
+      "role": "basic_points",
+      "mvpImportance": "OPTIONAL"
+    },
+    {
+      "id": "sheala_de_tancarville",
+      "name": "Sheala de Tancarville",
+      "cardType": "UNIT",
+      "faction": "NORTHERN_REALMS",
+      "description": "Zwykła karta dystansowa bez efektu specjalnego.",
+      "row": "RANGED",
+      "basePower": 5,
+      "abilities": [],
+      "playTarget": "OWN_BOARD",
+      "role": "basic_points",
+      "mvpImportance": "OPTIONAL"
+    },
+    {
+      "id": "sheldon_skaggs",
+      "name": "Sheldon Skaggs",
+      "cardType": "UNIT",
+      "faction": "NORTHERN_REALMS",
+      "description": "Zwykła jednostka dystansowa.",
+      "row": "RANGED",
+      "basePower": 4,
+      "abilities": [],
+      "playTarget": "OWN_BOARD",
+      "role": "basic_points",
+      "mvpImportance": "OPTIONAL"
+    },
+    {
+      "id": "philippa_eilhart",
+      "name": "Filippa Eilhart",
+      "cardType": "UNIT",
+      "faction": "NORTHERN_REALMS",
+      "description": "Mocna karta bohatera w rzędzie dystansowym. Odporna na efekty specjalne.",
+      "row": "RANGED",
+      "basePower": 10,
+      "abilities": ["HERO"],
+      "playTarget": "OWN_BOARD",
+      "role": "high_power_safe_unit",
+      "mvpImportance": "RECOMMENDED"
+    },
+
+    {
+      "id": "catapult",
+      "name": "Katapulta",
+      "cardType": "UNIT",
+      "faction": "NORTHERN_REALMS",
+      "description": "Bardzo mocna karta oblężnicza z efektem więzi. Jedno z głównych źródeł punktów talii.",
+      "row": "SIEGE",
+      "basePower": 8,
+      "abilities": ["TIGHT_BOND"],
+      "playTarget": "OWN_BOARD",
+      "role": "core_combo",
+      "mvpImportance": "REQUIRED"
+    },
+    {
+      "id": "ballista",
+      "name": "Balista",
+      "cardType": "UNIT",
+      "faction": "NORTHERN_REALMS",
+      "description": "Stabilna karta oblężnicza bez efektu specjalnego.",
+      "row": "SIEGE",
+      "basePower": 6,
+      "abilities": [],
+      "playTarget": "OWN_BOARD",
+      "role": "basic_points",
+      "mvpImportance": "OPTIONAL"
+    },
+    {
+      "id": "trebuchet",
+      "name": "Trebusz",
+      "cardType": "UNIT",
+      "faction": "NORTHERN_REALMS",
+      "description": "Stabilna jednostka oblężnicza.",
+      "row": "SIEGE",
+      "basePower": 6,
+      "abilities": [],
+      "playTarget": "OWN_BOARD",
+      "role": "basic_points",
+      "mvpImportance": "OPTIONAL"
+    },
+    {
+      "id": "siege_tower",
+      "name": "Wieża oblężnicza",
+      "cardType": "UNIT",
+      "faction": "NORTHERN_REALMS",
+      "description": "Silna karta oblężnicza bez efektu specjalnego.",
+      "row": "SIEGE",
+      "basePower": 6,
+      "abilities": [],
+      "playTarget": "OWN_BOARD",
+      "role": "basic_points",
+      "mvpImportance": "OPTIONAL"
+    },
+    {
+      "id": "dun_banner_medic",
+      "name": "Medyczka Burej Chorągwi",
+      "cardType": "UNIT",
+      "faction": "NORTHERN_REALMS",
+      "description": "Jednostka oblężnicza z efektem medyka. Przywraca kartę jednostki z discardu.",
+      "row": "SIEGE",
+      "basePower": 5,
+      "abilities": ["MEDIC"],
+      "playTarget": "OWN_BOARD",
+      "role": "graveyard_value",
+      "mvpImportance": "REQUIRED"
+    },
+    {
+      "id": "kaedweni_siege_expert",
+      "name": "Mistrz Oblężeń z Kaedwen",
+      "cardType": "UNIT",
+      "faction": "NORTHERN_REALMS",
+      "description": "Słaba karta punktowa, ale wzmacnia inne jednostki w rzędzie oblężenia.",
+      "row": "SIEGE",
+      "basePower": 1,
+      "abilities": ["MORALE_BOOST"],
+      "playTarget": "OWN_BOARD",
+      "role": "row_support",
+      "mvpImportance": "RECOMMENDED"
+    },
+    {
+      "id": "thaler",
+      "name": "Talar",
+      "cardType": "UNIT",
+      "faction": "NORTHERN_REALMS",
+      "description": "Bardzo dobry szpieg. Daje przeciwnikowi tylko 1 punkt i pozwala dobrać 2 karty.",
+      "row": "SIEGE",
+      "basePower": 1,
+      "abilities": ["SPY"],
+      "playTarget": "OPPONENT_BOARD",
+      "role": "card_advantage",
+      "mvpImportance": "REQUIRED"
+    },
+
+    {
+      "id": "commanders_horn",
+      "name": "Róg dowódcy",
+      "cardType": "SPECIAL",
+      "faction": "NEUTRAL",
+      "description": "Karta specjalna podwajająca siłę jednostek w wybranym rzędzie.",
+      "row": null,
+      "basePower": null,
+      "abilities": ["COMMANDERS_HORN"],
+      "playTarget": "SELECTED_ROW",
+      "role": "row_multiplier",
+      "mvpImportance": "REQUIRED"
+    },
+    {
+      "id": "decoy",
+      "name": "Manekin",
+      "cardType": "SPECIAL",
+      "faction": "NEUTRAL",
+      "description": "Karta specjalna pozwalająca zabrać własną jednostkę ze stołu z powrotem do ręki.",
+      "row": null,
+      "basePower": null,
+      "abilities": ["DECOY"],
+      "playTarget": "OWN_UNIT_ON_BOARD",
+      "role": "tempo_trick",
+      "mvpImportance": "REQUIRED"
+    },
+    {
+      "id": "scorch",
+      "name": "Pożoga",
+      "cardType": "SPECIAL",
+      "faction": "NEUTRAL",
+      "description": "Karta specjalna niszcząca najmocniejsze jednostki na planszy.",
+      "row": null,
+      "basePower": null,
+      "abilities": ["SCORCH"],
+      "playTarget": "GLOBAL",
+      "role": "board_clear",
+      "mvpImportance": "REQUIRED"
+    },
+    {
+      "id": "biting_frost",
+      "name": "Trzaskający mróz",
+      "cardType": "SPECIAL",
+      "faction": "NEUTRAL",
+      "description": "Pogoda osłabiająca rzędy zwarcia obu graczy.",
+      "row": null,
+      "basePower": null,
+      "abilities": ["WEATHER_CLOSE"],
+      "playTarget": "GLOBAL",
+      "role": "weather_control",
+      "mvpImportance": "RECOMMENDED"
+    },
+    {
+      "id": "impenetrable_fog",
+      "name": "Gęsta mgła",
+      "cardType": "SPECIAL",
+      "faction": "NEUTRAL",
+      "description": "Pogoda osłabiająca rzędy dystansowe obu graczy.",
+      "row": null,
+      "basePower": null,
+      "abilities": ["WEATHER_RANGED"],
+      "playTarget": "GLOBAL",
+      "role": "weather_control",
+      "mvpImportance": "RECOMMENDED"
+    },
+    {
+      "id": "torrential_rain",
+      "name": "Ulewny deszcz",
+      "cardType": "SPECIAL",
+      "faction": "NEUTRAL",
+      "description": "Pogoda osłabiająca rzędy oblężnicze obu graczy.",
+      "row": null,
+      "basePower": null,
+      "abilities": ["WEATHER_SIEGE"],
+      "playTarget": "GLOBAL",
+      "role": "weather_control",
+      "mvpImportance": "RECOMMENDED"
+    },
+    {
+      "id": "clear_weather",
+      "name": "Czyste niebo",
+      "cardType": "SPECIAL",
+      "faction": "NEUTRAL",
+      "description": "Karta specjalna usuwająca wszystkie aktywne efekty pogodowe.",
+      "row": null,
+      "basePower": null,
+      "abilities": ["CLEAR_WEATHER"],
+      "playTarget": "GLOBAL",
+      "role": "weather_counter",
+      "mvpImportance": "RECOMMENDED"
+    }
+  ],
+  "deck": {
+    "id": "northern_realms_mvp_reference_deck",
+    "name": "Królestwa Północy — MVP Reference Deck",
+    "faction": "NORTHERN_REALMS",
+    "leaderCardId": "leader_foltest_king_of_the_north",
+    "cards": [
+      {
+        "cardId": "poor_fucking_infantry",
+        "count": 3
+      },
+      {
+        "cardId": "blue_stripes_commando",
+        "count": 3
+      },
+      {
+        "cardId": "prince_stennis",
+        "count": 1
+      },
+      {
+        "cardId": "sigismund_dijkstra",
+        "count": 1
+      },
+      {
+        "cardId": "vernon_roche",
+        "count": 1
+      },
+      {
+        "cardId": "john_natalis",
+        "count": 1
+      },
+      {
+        "cardId": "ves",
+        "count": 1
+      },
+      {
+        "cardId": "siegfried_of_denesle",
+        "count": 1
+      },
+      {
+        "cardId": "redanian_foot_soldier",
+        "count": 1
+      },
+      {
+        "cardId": "yarpen_zigrin",
+        "count": 1
+      },
+
+      {
+        "cardId": "crinfrid_reavers_dragon_hunter",
+        "count": 3
+      },
+      {
+        "cardId": "detmold",
+        "count": 1
+      },
+      {
+        "cardId": "keira_metz",
+        "count": 1
+      },
+      {
+        "cardId": "sabrina_glevissig",
+        "count": 1
+      },
+      {
+        "cardId": "sheala_de_tancarville",
+        "count": 1
+      },
+      {
+        "cardId": "sheldon_skaggs",
+        "count": 1
+      },
+      {
+        "cardId": "philippa_eilhart",
+        "count": 1
+      },
+
+      {
+        "cardId": "catapult",
+        "count": 2
+      },
+      {
+        "cardId": "ballista",
+        "count": 1
+      },
+      {
+        "cardId": "trebuchet",
+        "count": 1
+      },
+      {
+        "cardId": "siege_tower",
+        "count": 1
+      },
+      {
+        "cardId": "dun_banner_medic",
+        "count": 1
+      },
+      {
+        "cardId": "kaedweni_siege_expert",
+        "count": 2
+      },
+      {
+        "cardId": "thaler",
+        "count": 1
+      },
+
+      {
+        "cardId": "commanders_horn",
+        "count": 2
+      },
+      {
+        "cardId": "decoy",
+        "count": 2
+      },
+      {
+        "cardId": "scorch",
+        "count": 1
+      },
+      {
+        "cardId": "biting_frost",
+        "count": 1
+      },
+      {
+        "cardId": "impenetrable_fog",
+        "count": 1
+      },
+      {
+        "cardId": "torrential_rain",
+        "count": 1
+      },
+      {
+        "cardId": "clear_weather",
+        "count": 1
+      }
+    ],
+    "summary": {
+      "leaderCount": 1,
+      "unitCardCopies": 33,
+      "specialCardCopies": 9,
+      "totalPlayableCardCopies": 42
+    }
+  }
+}

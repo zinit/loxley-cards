@@ -1,0 +1,37 @@
+{
+  "id": "boosted_plus_deck",
+  "displayName": "Sherwood Boosted Plus — Sheriff's Roster",
+  "leaderCardId": "leader_robin_hood_sherwood_hunter",
+  "cards": [
+    { "cardId": "peasants_of_locksley", "count": 3 },
+    { "cardId": "sherwood_brothers", "count": 3 },
+    { "cardId": "lord_walter_huntingdon", "count": 1 },
+    { "cardId": "allan_a_dale", "count": 1 },
+    { "cardId": "little_john", "count": 2 },
+    { "cardId": "will_scarlet", "count": 1 },
+    { "cardId": "lady_marian", "count": 1 },
+    { "cardId": "sir_richard_lea", "count": 1 },
+
+    { "cardId": "sherwood_archers", "count": 3 },
+    { "cardId": "much_millers_son", "count": 1 },
+    { "cardId": "eleanor_archer", "count": 1 },
+    { "cardId": "annabelle_mansfield", "count": 1 },
+    { "cardId": "will_stutely", "count": 1 },
+
+    { "cardId": "sherwood_trebuchet", "count": 2 },
+    { "cardId": "great_bow", "count": 1 },
+    { "cardId": "rebels_ram", "count": 1 },
+    { "cardId": "wooden_tower", "count": 1 },
+    { "cardId": "friar_tuck", "count": 1 },
+    { "cardId": "sherwood_engineer", "count": 2 },
+    { "cardId": "hugo_rascal", "count": 1 },
+
+    { "cardId": "sherwood_horn", "count": 2 },
+    { "cardId": "scarecrow", "count": 2 },
+    { "cardId": "fire_arrows", "count": 2 },
+    { "cardId": "icy_dawn", "count": 1 },
+    { "cardId": "sherwood_fog", "count": 1 },
+    { "cardId": "forest_storm", "count": 1 },
+    { "cardId": "sherwood_sun", "count": 1 }
+  ]
+}

@@ -1,0 +1,40 @@
+{
+  "faction": "NORTHERN_REALMS",
+
+  "leader": "Foltest: Dowódca Północy",
+
+
+  "units": [
+    {"name": "Biedna Pierdolona Piechota", "count": 3, "row": "I", "power": 1, "ability": "TIGHT_BOND"},
+    {"name": "Komandos Niebieskich Pasów", "count": 3, "row": "I", "power": 4, "ability": "TIGHT_BOND"},
+    {"name": "Książę Stennis", "count": 1, "row": "I", "power": 5, "ability": "SPY"},
+    {"name": "Sigismund Dijkstra", "count": 1, "row": "I", "power": 4, "ability": "SPY"},
+    {"name": "Vernon Roche", "count": 1, "row": "I", "power": 10, "ability": "HERO"},
+    {"name": "Jan Natalis", "count": 1, "row": "I", "power": 10, "ability": "HERO"},
+    {"name": "Ves", "count": 1, "row": "I", "power": 5, "ability": null},
+    {"name": "Zygfryd z Denesle", "count": 1, "row": "I", "power": 5, "ability": null},
+
+    {"name": "Rębacze z Crinfrid", "count": 3, "row": "II", "power": 5, "ability": "TIGHT_BOND"},
+    {"name": "Detmold", "count": 1, "row": "II", "power": 6, "ability": null},
+    {"name": "Keira Metz", "count": 1, "row": "II", "power": 5, "ability": null},
+    {"name": "Sabrina Glevissig", "count": 1, "row": "II", "power": 4, "ability": null},
+    {"name": "Filippa Eilhart", "count": 1, "row": "II", "power": 10, "ability": "HERO"},
+
+    {"name": "Katapulta", "count": 2, "row": "III", "power": 8, "ability": "TIGHT_BOND"},
+    {"name": "Balista", "count": 1, "row": "III", "power": 6, "ability": null},
+    {"name": "Trebusz", "count": 1, "row": "III", "power": 6, "ability": null},
+    {"name": "Wieża oblężnicza", "count": 1, "row": "III", "power": 6, "ability": null},
+    {"name": "Medyczka Burej Chorągwi", "count": 1, "row": "III", "power": 5, "ability": "MEDIC"},
+    {"name": "Mistrz Oblężeń z Kaedwen", "count": 2, "row": "III", "power": 1, "ability": "MORALE_BOOST"},
+    {"name": "Talar", "count": 1, "row": "III", "power": 1, "ability": "SPY"}
+  ],
+  "specials": [
+    {"name": "Róg dowódcy", "count": 2, "ability": "COMMANDERS_HORN"},
+    {"name": "Manekin", "count": 2, "ability": "DECOY"},
+    {"name": "Pożoga", "count": 1, "ability": "SCORCH"},
+    {"name": "Trzaskający mróz", "count": 1, "ability": "WEATHER_CLOSE"},
+    {"name": "Gęsta mgła", "count": 1, "ability": "WEATHER_RANGED"},
+    {"name": "Ulewny deszcz", "count": 1, "ability": "WEATHER_SIEGE"},
+    {"name": "Czyste niebo", "count": 1, "ability": "CLEAR_WEATHER"}
+  ]
+}

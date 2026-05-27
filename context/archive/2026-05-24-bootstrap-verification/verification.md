@@ -54,7 +54,7 @@ No recency signal available for this starter. Proceeded without warning.
 **Exit code**: 0
 **Files moved**: 8 (`.gitattributes`, `.mvn/`, `HELP.md`, `mvnw`, `mvnw.cmd`, `pom.xml`, `src/`)
 **Conflicts (.scaffold siblings)**: none
-**.gitignore handling**: append-merged — existing `_poc` line preserved; Spring Boot patterns appended with `# from spring` separator
+**.gitignore handling**: append-merged — pre-existing local-only ignore lines preserved; Spring Boot patterns appended with `# from spring` separator
 **.bootstrap-scaffold cleanup**: deleted
 
 ## Post-scaffold audit

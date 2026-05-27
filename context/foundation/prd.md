@@ -86,7 +86,7 @@ Użytkownik widzi swój własny postęp w kampanii (osobisty profil z listą uko
 
 ## Non-Functional Requirements
 
-- Odpowiedź bota na ruch gracza poniżej 2 sekund. Bot jest deterministyczny (scoring-based).
+- Odpowiedź bota na ruch gracza poniżej 2 sekund. Aktualnie engine implementuje trzy strategie bota (random + heuristic-easy + heuristic-medium); przypisanie strategii do etapu kampanii (per `BotStrategyResolver`) będzie tuningowane podczas playtestu.
 - Jedyną daną osobową jest email do logowania. Zero tracking, zero analityki, zero cookies marketingowych w MVP.
 - Gra jest użyteczna na dużym ekranie (laptop/desktop). Plansza z 6 rzędami + ręka kart + UI dowódcy/grave/deck wymaga dużego ekranu dla czytelności.
 
@@ -94,11 +94,13 @@ Użytkownik widzi swój własny postęp w kampanii (osobisty profil z listą uko
 
 Gra wymusza taktyczne zarządzanie ograniczoną ręką kart w 3 rundach (best-of-3), gdzie zwycięzca rundy to gracz z wyższą sumą siły w rzędach close/ranged/siege po zastosowaniu modyfikatorów z pogody / dowódcy / efektów abilities, a wygrana partii odblokowuje kolejny etap kampanii.
 
-**Inputy reguły:** Karty zagrane przez gracza i bota w 3 rzędy (każda karta ma bazową siłę) + aktywne modyfikatory: pogoda (obniża siłę rzędu do 1), horn (podwaja siłę rzędu), leader ability (efekt jednorazowy na partię), efekty abilities kart (spy, medic, muster, tight bond — pełny zestaw z Witchera 3).
+**Inputy reguły:** Karty zagrane przez gracza i bota w 3 rzędy (każda karta ma bazową siłę) + aktywne modyfikatory: pogoda (3 warianty rzędów — close/ranged/siege; obniża siłę non-hero w rzędzie do 1), commander's horn (podwaja sumę rzędu), leader ability (efekt jednorazowy na partię), efekty abilities kart (spy, medic, tight bond, scorch, decoy, morale boost, clear weather, hero immunity).
 
 **Output reguły:** Wynik rundy (wygrana/przegrana/remis na podstawie sumy siły) → wynik partii (best-of-3: 2 wygrane rundy = zwycięstwo) → progres kampanii (odblokowanie następnego etapu).
 
-**Zestaw modyfikatorów na MVP:** Pełny zestaw abilities z Witchera 3 — pogoda, horn, spy, medic, muster, tight bond, leader abilities. Bot stosuje te same reguły co gracz.
+**Zestaw abilities w aktualnej implementacji engine'u:** weather (3 warianty: WEATHER_CLOSE, WEATHER_RANGED, WEATHER_SIEGE), commander's horn, spy, medic, tight bond, scorch, decoy, morale boost, clear weather, hero immunity, leader abilities (obecnie CLEAR_WEATHER). Modifier order per karta: hero immunity → weather → tight bond → morale boost → horn. Bot stosuje te same reguły co gracz.
+
+> **Known gap vs PRD:** **muster** ability nie jest aktualnie zaimplementowana (brak `MUSTER` w `AbilityCodes`, brak `MusterEffect`, brak użycia w sample JSON). Engine jest poza tym zgodny z listą "pełen zestaw z Witchera 3"; muster może zostać dodany w follow-up change, jeśli okaże się krytyczny dla docelowego Gwint feel. Dodatkowo aktualna implementacja idzie nieco poza PRD przez **scorch**, **decoy** i **morale boost** — wszystkie autentyczne mechaniki Witcher 3 Gwint, włączone w ramach F-01 dla pełniejszego pokrycia oryginalnej mechaniki.
 
 ## Access Control
 

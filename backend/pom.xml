@@ -23,6 +23,7 @@
 
 	<modules>
 		<module>acommon-game-engine</module>
+		<module>acommon-game-cli</module>
 		<module>acommon-db</module>
 		<module>acommon-ai</module>
 		<module>app</module>
@@ -33,6 +34,11 @@
 			<dependency>
 				<groupId>cards.loxley</groupId>
 				<artifactId>loxley-cards-game-engine</artifactId>
+				<version>${project.version}</version>
+			</dependency>
+			<dependency>
+				<groupId>cards.loxley</groupId>
+				<artifactId>loxley-cards-game-cli</artifactId>
 				<version>${project.version}</version>
 			</dependency>
 			<dependency>

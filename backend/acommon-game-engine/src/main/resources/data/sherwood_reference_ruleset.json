@@ -1,0 +1,563 @@
+{
+  "schemaVersion": "0.1",
+  "ruleset": {
+    "id": "gwent_reference_mvp_robin_hood",
+    "name": "Sherwood Reference MVP",
+    "description": "Referencyjny zestaw kart i efektów do silnika gry karcianej inspirowanej Gwintem z Wiedźmina 3, osadzony w uniwersum legendy o Robin Hoodzie.",
+    "matchFormat": {
+      "roundsToWin": 2,
+      "maxRounds": 3,
+      "startingHandSize": 10,
+      "drawEachTurn": false,
+      "actionPerTurn": 1,
+      "allowedActions": ["PLAY_CARD", "PASS", "USE_LEADER"]
+    }
+  },
+  "rows": [
+    {
+      "code": "I",
+      "id": "CLOSE",
+      "originalName": "Close Combat",
+      "polishName": "Zwarcie",
+      "description": "Rząd dla jednostek walczących wręcz — banici z mieczami, kuse i kije."
+    },
+    {
+      "code": "II",
+      "id": "RANGED",
+      "originalName": "Ranged Combat",
+      "polishName": "Dystans",
+      "description": "Rząd dla łuczników i zwiadowców Sherwood."
+    },
+    {
+      "code": "III",
+      "id": "SIEGE",
+      "originalName": "Siege Combat",
+      "polishName": "Oblężenie",
+      "description": "Rząd dla machin oblężniczych i ciężkiego sprzętu używanego przeciwko zamkowi w Nottingham."
+    }
+  ],
+  "abilities": [
+    {
+      "code": "HERO",
+      "originalName": "Hero",
+      "polishName": "Bohater",
+      "type": "PASSIVE",
+      "target": "SELF",
+      "description": "Karta odporna na pogodę, karty specjalne i większość efektów innych kart.",
+      "implementationNotes": "Efekty pogodowe, Ogniste Strzały, Strach na Wróble, Brat Tuck i Róg Sherwoodu nie powinny zmieniać tej karty, chyba że jawnie dopuszczasz wyjątek."
+    },
+    {
+      "code": "SPY",
+      "originalName": "Spy",
+      "polishName": "Szpieg",
+      "type": "ON_PLAY",
+      "target": "OPPONENT_BOARD",
+      "description": "Karta jest zagrywana na stronę przeciwnika. Przeciwnik dostaje jej punkty, a właściciel karty dobiera 2 karty.",
+      "implementationNotes": "Po zagraniu karta trafia do rzędu przeciwnika, ale efekt dobierania kart wykonuje gracz, który ją zagrał."
+    },
+    {
+      "code": "MEDIC",
+      "originalName": "Medic",
+      "polishName": "Medyk / Wskrzeszenie",
+      "type": "ON_PLAY",
+      "target": "OWN_DISCARD",
+      "description": "Pozwala wybrać jednostkę z własnego stosu kart odrzuconych i natychmiast ją zagrać.",
+      "implementationNotes": "Nie pozwalaj przywracać kart specjalnych ani kart HERO, jeśli trzymasz się klasycznego modelu."
+    },
+    {
+      "code": "TIGHT_BOND",
+      "originalName": "Tight Bond",
+      "polishName": "Więź braci",
+      "type": "SCORING_MODIFIER",
+      "target": "SAME_CARD_IN_ROW",
+      "description": "Karty o tej samej nazwie w tym samym rzędzie wzmacniają się wzajemnie — banici walczą lepiej, gdy są razem.",
+      "implementationNotes": "Najprościej: jeśli w rzędzie jest więcej niż jedna kopia tej samej karty z TIGHT_BOND, każda z nich ma podwojoną bazową siłę."
+    },
+    {
+      "code": "MORALE_BOOST",
+      "originalName": "Morale Boost",
+      "polishName": "Wysokie morale",
+      "type": "SCORING_MODIFIER",
+      "target": "OTHER_UNITS_IN_SAME_ROW",
+      "description": "Dodaje +1 siły innym jednostkom w tym samym rzędzie.",
+      "implementationNotes": "Efekt nie powinien wzmacniać samej karty, która ma MORALE_BOOST."
+    },
+    {
+      "code": "COMMANDERS_HORN",
+      "originalName": "Commander's Horn",
+      "polishName": "Róg Sherwoodu",
+      "type": "SPECIAL",
+      "target": "SELECTED_ROW",
+      "description": "Podwaja siłę wszystkich zwykłych jednostek w wybranym rzędzie — sygnał Robina mobilizujący banitów.",
+      "implementationNotes": "Nie powinien wpływać na karty HERO. W rzędzie powinien działać tylko jeden aktywny efekt tego typu."
+    },
+    {
+      "code": "SCORCH",
+      "originalName": "Scorch",
+      "polishName": "Ogniste Strzały",
+      "type": "SPECIAL",
+      "target": "BOARD_MAX_POWER_UNITS",
+      "description": "Niszczy najmocniejsze jednostki na planszy — płonące strzały z lasu.",
+      "implementationNotes": "W klasycznym wariancie usuwa wszystkie niebohaterskie jednostki z najwyższą aktualną siłą."
+    },
+    {
+      "code": "DECOY",
+      "originalName": "Decoy",
+      "polishName": "Strach na Wróble",
+      "type": "SPECIAL",
+      "target": "OWN_UNIT_ON_BOARD",
+      "description": "Pozwala zabrać własną jednostkę ze stołu z powrotem do ręki — sprytna pułapka banitów.",
+      "implementationNotes": "Najlepsze użycie: cofnięcie szpiega, medyka albo mocnej karty efektowej. Nie powinien działać na HERO."
+    },
+    {
+      "code": "WEATHER_CLOSE",
+      "originalName": "Biting Frost",
+      "polishName": "Lodowaty Świt",
+      "type": "WEATHER",
+      "target": "CLOSE_ROW_BOTH_PLAYERS",
+      "description": "Ustawia siłę wszystkich zwykłych jednostek w rzędzie zwarcia obu graczy na 1 — ludzie marzną w lesie o świcie.",
+      "implementationNotes": "Nie wpływa na HERO. Pogoda działa symetrycznie na obu graczy."
+    },
+    {
+      "code": "WEATHER_RANGED",
+      "originalName": "Impenetrable Fog",
+      "polishName": "Mgła Sherwood",
+      "type": "WEATHER",
+      "target": "RANGED_ROW_BOTH_PLAYERS",
+      "description": "Ustawia siłę wszystkich zwykłych jednostek dystansowych obu graczy na 1 — łucznicy nie widzą celu w mgle.",
+      "implementationNotes": "Nie wpływa na HERO. Pogoda działa symetrycznie na obu graczy."
+    },
+    {
+      "code": "WEATHER_SIEGE",
+      "originalName": "Torrential Rain",
+      "polishName": "Burza nad Lasem",
+      "type": "WEATHER",
+      "target": "SIEGE_ROW_BOTH_PLAYERS",
+      "description": "Ustawia siłę wszystkich zwykłych jednostek oblężniczych obu graczy na 1 — deszcz niszczy machiny.",
+      "implementationNotes": "Nie wpływa na HERO. Pogoda działa symetrycznie na obu graczy."
+    },
+    {
+      "code": "CLEAR_WEATHER",
+      "originalName": "Clear Weather",
+      "polishName": "Słońce nad Sherwood",
+      "type": "SPECIAL",
+      "target": "ALL_WEATHER_EFFECTS",
+      "description": "Usuwa wszystkie aktywne efekty pogodowe — słoneczny poranek nad lasem.",
+      "implementationNotes": "Po usunięciu pogody należy przeliczyć siłę rzędów."
+    }
+  ],
+  "cards": [
+    {
+      "id": "leader_robin_hood_sherwood_hunter",
+      "name": "Robin Hood: Łowca z Sherwood",
+      "cardType": "LEADER",
+      "faction": "SHERWOOD_OUTLAWS",
+      "description": "Przywódca banitów. Strzałą sygnałową rozprasza ciemność i mgły lasu — jego zdolność usuwa aktywne efekty pogodowe.",
+      "row": null,
+      "basePower": null,
+      "abilities": ["CLEAR_WEATHER"],
+      "playTarget": "GLOBAL",
+      "role": "leader",
+      "mvpImportance": "REQUIRED"
+    },
+
+    {
+      "id": "peasants_of_locksley",
+      "name": "Wieśniacy z Locksley",
+      "cardType": "UNIT",
+      "faction": "SHERWOOD_OUTLAWS",
+      "description": "Słaba jednostka piechoty — prości chłopi z wioski rodzinnej Robina. Stają się groźni dopiero w większej liczbie.",
+      "row": "CLOSE",
+      "basePower": 1,
+      "abilities": ["TIGHT_BOND"],
+      "playTarget": "OWN_BOARD",
+      "role": "combo_filler",
+      "mvpImportance": "OPTIONAL"
+    },
+    {
+      "id": "sherwood_brothers",
+      "name": "Bracia z Sherwood",
+      "cardType": "UNIT",
+      "faction": "SHERWOOD_OUTLAWS",
+      "description": "Podstawowa karta combo Banitów. Rdzeń Wesołej Drużyny — mocno zyskuje, gdy na stole pojawia się więcej kopii.",
+      "row": "CLOSE",
+      "basePower": 4,
+      "abilities": ["TIGHT_BOND"],
+      "playTarget": "OWN_BOARD",
+      "role": "core_combo",
+      "mvpImportance": "REQUIRED"
+    },
+    {
+      "id": "lord_walter_huntingdon",
+      "name": "Lord Walter z Huntingdon",
+      "cardType": "UNIT",
+      "faction": "SHERWOOD_OUTLAWS",
+      "description": "Szlachcic-sympatyk banitów, infiltrujący dwór szeryfa. Daje przeciwnikowi punkty, ale pozwala dobrać 2 karty.",
+      "row": "CLOSE",
+      "basePower": 5,
+      "abilities": ["SPY"],
+      "playTarget": "OPPONENT_BOARD",
+      "role": "card_advantage",
+      "mvpImportance": "REQUIRED"
+    },
+    {
+      "id": "allan_a_dale",
+      "name": "Allan-a-Dale",
+      "cardType": "UNIT",
+      "faction": "SHERWOOD_OUTLAWS",
+      "description": "Wędrowny bard i informator Merry Men. Mała siła, ale przewaga kart przy małym zysku punktowym przeciwnika.",
+      "row": "CLOSE",
+      "basePower": 4,
+      "abilities": ["SPY"],
+      "playTarget": "OPPONENT_BOARD",
+      "role": "card_advantage",
+      "mvpImportance": "REQUIRED"
+    },
+    {
+      "id": "little_john",
+      "name": "Mały John",
+      "cardType": "UNIT",
+      "faction": "SHERWOOD_OUTLAWS",
+      "description": "Prawa ręka Robina, gigant z kijem. Mocna karta bohatera w rzędzie zwarcia.",
+      "row": "CLOSE",
+      "basePower": 10,
+      "abilities": ["HERO"],
+      "playTarget": "OWN_BOARD",
+      "role": "high_power_safe_unit",
+      "mvpImportance": "RECOMMENDED"
+    },
+    {
+      "id": "will_scarlet",
+      "name": "Will Scarlet",
+      "cardType": "UNIT",
+      "faction": "SHERWOOD_OUTLAWS",
+      "description": "Kuzyn Robina i jeden z dowódców Merry Men. Druga mocna karta bohatera w rzędzie zwarcia.",
+      "row": "CLOSE",
+      "basePower": 10,
+      "abilities": ["HERO"],
+      "playTarget": "OWN_BOARD",
+      "role": "high_power_safe_unit",
+      "mvpImportance": "RECOMMENDED"
+    },
+    {
+      "id": "lady_marian",
+      "name": "Lady Marian",
+      "cardType": "UNIT",
+      "faction": "SHERWOOD_OUTLAWS",
+      "description": "Towarzyszka Robin Hooda, walcząca u jego boku. Prosta karta punktowa w zwarciu.",
+      "row": "CLOSE",
+      "basePower": 5,
+      "abilities": [],
+      "playTarget": "OWN_BOARD",
+      "role": "basic_points",
+      "mvpImportance": "OPTIONAL"
+    },
+    {
+      "id": "sir_richard_lea",
+      "name": "Sir Richard z Lea",
+      "cardType": "UNIT",
+      "faction": "SHERWOOD_OUTLAWS",
+      "description": "Rycerz-sojusznik banitów z klasycznej legendy. Stabilna karta punktowa bez efektu.",
+      "row": "CLOSE",
+      "basePower": 5,
+      "abilities": [],
+      "playTarget": "OWN_BOARD",
+      "role": "basic_points",
+      "mvpImportance": "OPTIONAL"
+    },
+
+    {
+      "id": "sherwood_archers",
+      "name": "Łucznicy z Sherwood",
+      "cardType": "UNIT",
+      "faction": "SHERWOOD_OUTLAWS",
+      "description": "Mocna karta dystansowa z efektem więzi. Esencja banitów — elitarni strzelcy lasu. Podstawowa karta combo.",
+      "row": "RANGED",
+      "basePower": 5,
+      "abilities": ["TIGHT_BOND"],
+      "playTarget": "OWN_BOARD",
+      "role": "core_combo",
+      "mvpImportance": "REQUIRED"
+    },
+    {
+      "id": "much_millers_son",
+      "name": "Much, Syn Młynarza",
+      "cardType": "UNIT",
+      "faction": "SHERWOOD_OUTLAWS",
+      "description": "Jeden z pierwszych Merry Men, snajper z dalekiego dystansu. Stabilna karta dystansowa bez dodatkowego efektu.",
+      "row": "RANGED",
+      "basePower": 6,
+      "abilities": [],
+      "playTarget": "OWN_BOARD",
+      "role": "basic_points",
+      "mvpImportance": "OPTIONAL"
+    },
+    {
+      "id": "eleanor_archer",
+      "name": "Eleanor Łuczniczka",
+      "cardType": "UNIT",
+      "faction": "SHERWOOD_OUTLAWS",
+      "description": "Łuczniczka z głębi Sherwood. Daje solidną liczbę punktów.",
+      "row": "RANGED",
+      "basePower": 5,
+      "abilities": [],
+      "playTarget": "OWN_BOARD",
+      "role": "basic_points",
+      "mvpImportance": "OPTIONAL"
+    },
+    {
+      "id": "annabelle_mansfield",
+      "name": "Annabelle z Mansfield",
+      "cardType": "UNIT",
+      "faction": "SHERWOOD_OUTLAWS",
+      "description": "Zwiadowczyni z Mansfield. Zwykła jednostka dystansowa.",
+      "row": "RANGED",
+      "basePower": 4,
+      "abilities": [],
+      "playTarget": "OWN_BOARD",
+      "role": "basic_points",
+      "mvpImportance": "OPTIONAL"
+    },
+    {
+      "id": "will_stutely",
+      "name": "Wielki Will Stutely",
+      "cardType": "UNIT",
+      "faction": "SHERWOOD_OUTLAWS",
+      "description": "Legendarny łucznik z baśni Robin Hooda. Mocna karta bohatera w rzędzie dystansowym, odporna na efekty specjalne.",
+      "row": "RANGED",
+      "basePower": 10,
+      "abilities": ["HERO"],
+      "playTarget": "OWN_BOARD",
+      "role": "high_power_safe_unit",
+      "mvpImportance": "RECOMMENDED"
+    },
+
+    {
+      "id": "sherwood_trebuchet",
+      "name": "Trebusz Sherwoodu",
+      "cardType": "UNIT",
+      "faction": "SHERWOOD_OUTLAWS",
+      "description": "Improwizowana machina banitów, używana w starciach z zamkiem Nottingham. Bardzo mocna karta oblężnicza z efektem więzi — jedno z głównych źródeł punktów talii.",
+      "row": "SIEGE",
+      "basePower": 8,
+      "abilities": ["TIGHT_BOND"],
+      "playTarget": "OWN_BOARD",
+      "role": "core_combo",
+      "mvpImportance": "REQUIRED"
+    },
+    {
+      "id": "great_bow",
+      "name": "Wielki Łuk",
+      "cardType": "UNIT",
+      "faction": "SHERWOOD_OUTLAWS",
+      "description": "Gigantyczna balista zbudowana przez konstruktorów banitów. Stabilna karta oblężnicza bez efektu specjalnego.",
+      "row": "SIEGE",
+      "basePower": 6,
+      "abilities": [],
+      "playTarget": "OWN_BOARD",
+      "role": "basic_points",
+      "mvpImportance": "OPTIONAL"
+    },
+    {
+      "id": "rebels_ram",
+      "name": "Taran Buntowników",
+      "cardType": "UNIT",
+      "faction": "SHERWOOD_OUTLAWS",
+      "description": "Drewniany taran do wyłamywania bram Nottingham. Stabilna jednostka oblężnicza.",
+      "row": "SIEGE",
+      "basePower": 6,
+      "abilities": [],
+      "playTarget": "OWN_BOARD",
+      "role": "basic_points",
+      "mvpImportance": "OPTIONAL"
+    },
+    {
+      "id": "wooden_tower",
+      "name": "Drewniana Wieża",
+      "cardType": "UNIT",
+      "faction": "SHERWOOD_OUTLAWS",
+      "description": "Wieża oblężnicza zbudowana z drzew Sherwood. Silna karta oblężnicza bez efektu specjalnego.",
+      "row": "SIEGE",
+      "basePower": 6,
+      "abilities": [],
+      "playTarget": "OWN_BOARD",
+      "role": "basic_points",
+      "mvpImportance": "OPTIONAL"
+    },
+    {
+      "id": "friar_tuck",
+      "name": "Brat Tuck",
+      "cardType": "UNIT",
+      "faction": "SHERWOOD_OUTLAWS",
+      "description": "Mnich-uzdrowiciel i wojownik z klasyki Robin Hooda. Jednostka oblężnicza z efektem medyka — przywraca kartę jednostki z discardu.",
+      "row": "SIEGE",
+      "basePower": 5,
+      "abilities": ["MEDIC"],
+      "playTarget": "OWN_BOARD",
+      "role": "graveyard_value",
+      "mvpImportance": "REQUIRED"
+    },
+    {
+      "id": "sherwood_engineer",
+      "name": "Inżynier z Sherwood",
+      "cardType": "UNIT",
+      "faction": "SHERWOOD_OUTLAWS",
+      "description": "Konstruktor machin oblężniczych — słaba karta punktowa, ale wzmacnia inne jednostki w rzędzie oblężenia.",
+      "row": "SIEGE",
+      "basePower": 1,
+      "abilities": ["MORALE_BOOST"],
+      "playTarget": "OWN_BOARD",
+      "role": "row_support",
+      "mvpImportance": "RECOMMENDED"
+    },
+    {
+      "id": "hugo_rascal",
+      "name": "Hugo Łapserdak",
+      "cardType": "UNIT",
+      "faction": "SHERWOOD_OUTLAWS",
+      "description": "Drobny złodziej-informator z gościńców. Bardzo dobry szpieg — daje przeciwnikowi tylko 1 punkt i pozwala dobrać 2 karty.",
+      "row": "SIEGE",
+      "basePower": 1,
+      "abilities": ["SPY"],
+      "playTarget": "OPPONENT_BOARD",
+      "role": "card_advantage",
+      "mvpImportance": "REQUIRED"
+    },
+
+    {
+      "id": "sherwood_horn",
+      "name": "Róg Sherwoodu",
+      "cardType": "SPECIAL",
+      "faction": "NEUTRAL",
+      "description": "Karta specjalna podwajająca siłę jednostek w wybranym rzędzie — sygnał Robina mobilizujący banitów.",
+      "row": null,
+      "basePower": null,
+      "abilities": ["COMMANDERS_HORN"],
+      "playTarget": "SELECTED_ROW",
+      "role": "row_multiplier",
+      "mvpImportance": "REQUIRED"
+    },
+    {
+      "id": "scarecrow",
+      "name": "Strach na Wróble",
+      "cardType": "SPECIAL",
+      "faction": "NEUTRAL",
+      "description": "Karta specjalna pozwalająca zabrać własną jednostkę ze stołu z powrotem do ręki — sprytna pułapka banitów.",
+      "row": null,
+      "basePower": null,
+      "abilities": ["DECOY"],
+      "playTarget": "OWN_UNIT_ON_BOARD",
+      "role": "tempo_trick",
+      "mvpImportance": "REQUIRED"
+    },
+    {
+      "id": "fire_arrows",
+      "name": "Ogniste Strzały",
+      "cardType": "SPECIAL",
+      "faction": "NEUTRAL",
+      "description": "Karta specjalna niszcząca najmocniejsze jednostki na planszy — płonące strzały z lasu.",
+      "row": null,
+      "basePower": null,
+      "abilities": ["SCORCH"],
+      "playTarget": "GLOBAL",
+      "role": "board_clear",
+      "mvpImportance": "REQUIRED"
+    },
+    {
+      "id": "icy_dawn",
+      "name": "Lodowaty Świt",
+      "cardType": "SPECIAL",
+      "faction": "NEUTRAL",
+      "description": "Pogoda osłabiająca rzędy zwarcia obu graczy — ludzie marzną w lesie o świcie.",
+      "row": null,
+      "basePower": null,
+      "abilities": ["WEATHER_CLOSE"],
+      "playTarget": "GLOBAL",
+      "role": "weather_control",
+      "mvpImportance": "RECOMMENDED"
+    },
+    {
+      "id": "sherwood_fog",
+      "name": "Mgła Sherwood",
+      "cardType": "SPECIAL",
+      "faction": "NEUTRAL",
+      "description": "Pogoda osłabiająca rzędy dystansowe obu graczy — łucznicy nie widzą celu w mgle lasu.",
+      "row": null,
+      "basePower": null,
+      "abilities": ["WEATHER_RANGED"],
+      "playTarget": "GLOBAL",
+      "role": "weather_control",
+      "mvpImportance": "RECOMMENDED"
+    },
+    {
+      "id": "forest_storm",
+      "name": "Burza nad Lasem",
+      "cardType": "SPECIAL",
+      "faction": "NEUTRAL",
+      "description": "Pogoda osłabiająca rzędy oblężnicze obu graczy — deszcz niszczy machiny.",
+      "row": null,
+      "basePower": null,
+      "abilities": ["WEATHER_SIEGE"],
+      "playTarget": "GLOBAL",
+      "role": "weather_control",
+      "mvpImportance": "RECOMMENDED"
+    },
+    {
+      "id": "sherwood_sun",
+      "name": "Słońce nad Sherwood",
+      "cardType": "SPECIAL",
+      "faction": "NEUTRAL",
+      "description": "Karta specjalna usuwająca wszystkie aktywne efekty pogodowe — słoneczny poranek nad lasem.",
+      "row": null,
+      "basePower": null,
+      "abilities": ["CLEAR_WEATHER"],
+      "playTarget": "GLOBAL",
+      "role": "weather_counter",
+      "mvpImportance": "RECOMMENDED"
+    }
+  ],
+  "deck": {
+    "id": "sherwood_outlaws_mvp_reference_deck",
+    "name": "Banici z Sherwood — MVP Reference Deck",
+    "faction": "SHERWOOD_OUTLAWS",
+    "leaderCardId": "leader_robin_hood_sherwood_hunter",
+    "cards": [
+      { "cardId": "peasants_of_locksley", "count": 3 },
+      { "cardId": "sherwood_brothers", "count": 3 },
+      { "cardId": "lord_walter_huntingdon", "count": 1 },
+      { "cardId": "allan_a_dale", "count": 1 },
+      { "cardId": "little_john", "count": 1 },
+      { "cardId": "will_scarlet", "count": 1 },
+      { "cardId": "lady_marian", "count": 1 },
+      { "cardId": "sir_richard_lea", "count": 1 },
+
+      { "cardId": "sherwood_archers", "count": 3 },
+      { "cardId": "much_millers_son", "count": 1 },
+      { "cardId": "eleanor_archer", "count": 1 },
+      { "cardId": "annabelle_mansfield", "count": 1 },
+      { "cardId": "will_stutely", "count": 1 },
+
+      { "cardId": "sherwood_trebuchet", "count": 2 },
+      { "cardId": "great_bow", "count": 1 },
+      { "cardId": "rebels_ram", "count": 1 },
+      { "cardId": "wooden_tower", "count": 1 },
+      { "cardId": "friar_tuck", "count": 1 },
+      { "cardId": "sherwood_engineer", "count": 2 },
+      { "cardId": "hugo_rascal", "count": 1 },
+
+      { "cardId": "sherwood_horn", "count": 2 },
+      { "cardId": "scarecrow", "count": 2 },
+      { "cardId": "fire_arrows", "count": 1 },
+      { "cardId": "icy_dawn", "count": 1 },
+      { "cardId": "sherwood_fog", "count": 1 },
+      { "cardId": "forest_storm", "count": 1 },
+      { "cardId": "sherwood_sun", "count": 1 }
+    ],
+    "summary": {
+      "leaderCount": 1,
+      "unitCardCopies": 28,
+      "specialCardCopies": 9,
+      "totalPlayableCardCopies": 37
+    }
+  }
+}

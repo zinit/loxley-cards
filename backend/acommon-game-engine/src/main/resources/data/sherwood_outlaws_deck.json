@@ -1,0 +1,39 @@
+{
+  "faction": "SHERWOOD_OUTLAWS",
+  "factionDisplayName": "Banici z Sherwood",
+  "leader": "Robin Hood: Łowca z Sherwood",
+  "factionPassive": "Po wygranej rundzie dobierasz 1 dodatkową kartę.",
+  "units": [
+    {"name": "Wieśniacy z Locksley", "count": 3, "row": "I", "power": 1, "ability": "TIGHT_BOND"},
+    {"name": "Bracia z Sherwood", "count": 3, "row": "I", "power": 4, "ability": "TIGHT_BOND"},
+    {"name": "Lord Walter z Huntingdon", "count": 1, "row": "I", "power": 5, "ability": "SPY"},
+    {"name": "Allan-a-Dale", "count": 1, "row": "I", "power": 4, "ability": "SPY"},
+    {"name": "Mały John", "count": 1, "row": "I", "power": 10, "ability": "HERO"},
+    {"name": "Will Scarlet", "count": 1, "row": "I", "power": 10, "ability": "HERO"},
+    {"name": "Lady Marian", "count": 1, "row": "I", "power": 5, "ability": null},
+    {"name": "Sir Richard z Lea", "count": 1, "row": "I", "power": 5, "ability": null},
+
+    {"name": "Łucznicy z Sherwood", "count": 3, "row": "II", "power": 5, "ability": "TIGHT_BOND"},
+    {"name": "Much, Syn Młynarza", "count": 1, "row": "II", "power": 6, "ability": null},
+    {"name": "Eleanor Łuczniczka", "count": 1, "row": "II", "power": 5, "ability": null},
+    {"name": "Annabelle z Mansfield", "count": 1, "row": "II", "power": 4, "ability": null},
+    {"name": "Wielki Will Stutely", "count": 1, "row": "II", "power": 10, "ability": "HERO"},
+    
+    {"name": "Trebusz Sherwoodu", "count": 2, "row": "III", "power": 8, "ability": "TIGHT_BOND"},
+    {"name": "Wielki Łuk", "count": 1, "row": "III", "power": 6, "ability": null},
+    {"name": "Taran Buntowników", "count": 1, "row": "III", "power": 6, "ability": null},
+    {"name": "Drewniana Wieża", "count": 1, "row": "III", "power": 6, "ability": null},
+    {"name": "Brat Tuck", "count": 1, "row": "III", "power": 5, "ability": "MEDIC"},
+    {"name": "Inżynier z Sherwood", "count": 2, "row": "III", "power": 1, "ability": "MORALE_BOOST"},
+    {"name": "Hugo Łapserdak", "count": 1, "row": "III", "power": 1, "ability": "SPY"}
+  ],
+  "specials": [
+    {"name": "Róg Sherwoodu", "count": 2, "ability": "COMMANDERS_HORN"},
+    {"name": "Strach na Wróble", "count": 2, "ability": "DECOY"},
+    {"name": "Ogniste Strzały", "count": 1, "ability": "SCORCH"},
+    {"name": "Lodowaty Świt", "count": 1, "ability": "WEATHER_CLOSE"},
+    {"name": "Mgła Sherwood", "count": 1, "ability": "WEATHER_RANGED"},
+    {"name": "Burza nad Lasem", "count": 1, "ability": "WEATHER_SIEGE"},
+    {"name": "Słońce nad Sherwood", "count": 1, "ability": "CLEAR_WEATHER"}
+  ]
+}

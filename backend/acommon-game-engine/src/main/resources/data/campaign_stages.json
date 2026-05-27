@@ -1,0 +1,12 @@
+[
+  {"stageNumber": 1,  "opponentProfileId": "ultra_easy", "description": "Lone bandit apprentice"},
+  {"stageNumber": 2,  "opponentProfileId": "easy",       "description": "Forest patrol"},
+  {"stageNumber": 3,  "opponentProfileId": "easy",       "description": "Reckless outlaw"},
+  {"stageNumber": 4,  "opponentProfileId": "medium",     "description": "Disciplined ranger"},
+  {"stageNumber": 5,  "opponentProfileId": "medium",     "description": "Veteran archer"},
+  {"stageNumber": 6,  "opponentProfileId": "medium",     "description": "Sheriff's lieutenant"},
+  {"stageNumber": 7,  "opponentProfileId": "hard",       "description": "Royal hunter"},
+  {"stageNumber": 8,  "opponentProfileId": "hard",       "description": "Knight of Nottingham"},
+  {"stageNumber": 9,  "opponentProfileId": "hard",       "description": "Captain of the guard"},
+  {"stageNumber": 10, "opponentProfileId": "top_hard",   "description": "The Sheriff himself"}
+]

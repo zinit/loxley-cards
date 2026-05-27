@@ -1,0 +1,74 @@
+{
+  "campaignStages": [
+    {
+      "stageNumber": 1,
+      "opponentProfileId": "ultra_easy",
+      "displayName": "Lone bandit apprentice",
+      "description": "A fresh recruit barely knows which end of the bow to hold. Your first true test of the rules.",
+      "rewardCardId": null
+    },
+    {
+      "stageNumber": 2,
+      "opponentProfileId": "easy",
+      "displayName": "Forest patrol",
+      "description": "A pair of outlaws on patrol. They know the woods but not their cards.",
+      "rewardCardId": null
+    },
+    {
+      "stageNumber": 3,
+      "opponentProfileId": "easy",
+      "displayName": "Reckless outlaw",
+      "description": "Bold but careless. Plays whatever comes first to hand.",
+      "rewardCardId": null
+    },
+    {
+      "stageNumber": 4,
+      "opponentProfileId": "medium",
+      "displayName": "Disciplined ranger",
+      "description": "Knows when to strike and when to hold. The first real challenge.",
+      "rewardCardId": null
+    },
+    {
+      "stageNumber": 5,
+      "opponentProfileId": "medium",
+      "displayName": "Veteran archer",
+      "description": "Years in the forest taught him patience. Watch your weather plays.",
+      "rewardCardId": null
+    },
+    {
+      "stageNumber": 6,
+      "opponentProfileId": "medium",
+      "displayName": "Sheriff's lieutenant",
+      "description": "Trained for command. Reads the board before committing.",
+      "rewardCardId": null
+    },
+    {
+      "stageNumber": 7,
+      "opponentProfileId": "hard",
+      "displayName": "Royal hunter",
+      "description": "Hand-picked by the crown. Strong deck, sharper instincts.",
+      "rewardCardId": null
+    },
+    {
+      "stageNumber": 8,
+      "opponentProfileId": "hard",
+      "displayName": "Knight of Nottingham",
+      "description": "Heavy armour, heavier cards. Brings heroes to every fight.",
+      "rewardCardId": null
+    },
+    {
+      "stageNumber": 9,
+      "opponentProfileId": "hard",
+      "displayName": "Captain of the guard",
+      "description": "Veteran of a dozen campaigns. Knows every trick in the book.",
+      "rewardCardId": null
+    },
+    {
+      "stageNumber": 10,
+      "opponentProfileId": "top_hard",
+      "displayName": "The Sheriff himself",
+      "description": "The final reckoning. Better deck, sharper mind, no mercy.",
+      "rewardCardId": null
+    }
+  ]
+}

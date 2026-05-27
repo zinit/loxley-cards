@@ -56,7 +56,7 @@ Magic link tokens + user progres per email + zapis stanu kampanii wymagają rela
 ## Backend module layout (Maven multi-module)
 
 - **Maven groupId:** `cards.loxley` (reverse `loxley.cards` domain — standard Maven convention)
-- **Base Java package:** `cards.loxley` (sub-packages per module: `cards.loxley.{app,game,db,ai}.*`)
+- **Base Java package:** `cards.loxley` (sub-packages per module: `cards.loxley.{app,game,cli,db,ai}.*`)
 
 ```
 backend/
@@ -65,14 +65,17 @@ backend/
 │                            #   package: cards.loxley.app
 ├── acommon-game-engine/     # core game logic — engine, scoring, bot, rules, card definitions
 │                            #   package: cards.loxley.game
+├── acommon-game-cli/        # standalone Spring Boot CLI runner for the engine (bot evaluation, simulation, interactive REPL)
+│                            #   package: cards.loxley.cli (depends on acommon-game-engine)
 ├── acommon-db/              # persistence layer — JPA entities, repositories, Flyway migrations
 │                            #   package: cards.loxley.db
 └── acommon-ai/              # AI integrations — stub w MVP (pod stretch goal AI-coach po MVP)
                              #   package: cards.loxley.ai
 ```
 
-**Status (po post-bootstrap refactor 2026-05-24):**
+**Status (po post-bootstrap refactor 2026-05-24, F-01 engine port + CLI runner 2026-05-26):**
 - ✅ Package refactor done — kod żyje pod `cards.loxley`.
-- ✅ Multi-module split done — `backend/pom.xml` jako parent (packaging `pom`), `backend/app/` jako Spring Boot bootstrap, 3 stub-moduły `acommon-{game-engine,db,ai}/`. Maven wrapper i `.mvn/` przeniesione do `backend/`. `mvn clean install` z reactor root przechodzi (5 modułów: Parent + 4 child).
-- ⏭️ POM dependencies (jpa, postgres, security) — pending, dorzucamy w kolejnym kroku.
-- ⏭️ Engine implementation (rules, scoring, bot, card defs w `acommon-game-engine`) — pending.
+- ✅ Multi-module split done — `backend/pom.xml` jako parent (packaging `pom`), `backend/app/` jako Spring Boot bootstrap, 4 sibling moduły `acommon-{game-engine,game-cli,db,ai}/`. Maven wrapper i `.mvn/` przeniesione do `backend/`. `mvn clean install` z reactor root przechodzi (6 modułów: Parent + 5 child).
+- ✅ Engine implementation done — `acommon-game-engine/` z pełnym engine (domain, loader, scoring, abilities, move pipeline, bot, faction passives, campaign, event bus) + 200 testów.
+- ✅ CLI runner done — `acommon-game-cli/` z `LoxleyCliApplication` (bot evaluation, bot-vs-bot simulation, interactive `cli-player` REPL) + 29 testów.
+- ⏭️ POM dependencies (jpa, postgres, security) — pending, dorzucamy w F-02 / F-03.

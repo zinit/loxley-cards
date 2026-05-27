@@ -8,11 +8,11 @@ Loxley-cards is a Gwint-inspired web card game — Spring Boot 4.0.6 backend (Ja
 - Email is the only personal data stored. No tracking, analytics, or marketing cookies.
 - Use Supabase ONLY as managed PostgreSQL provider (JDBC via Spring HikariCP). Do NOT add Supabase JS SDK, Supabase Auth, Supabase Storage, Realtime, or Edge Functions — these are explicit out-of-scope (see @context/foundation/infrastructure.md). Magic-link auth is implemented natively in Spring Boot.
 - Magic-link emails go through the Resend API (`@RestClient` / HTTP). Do NOT attempt direct SMTP — VPS providers (Hetzner included) block port 25 by anti-spam policy.
-- Java base package is `cards.loxley` (reverse of `loxley.cards` domain). All new code goes under this package; sub-packages per concern: `cards.loxley.{app,game,db,ai}`.
+- Java base package is `cards.loxley` (reverse of `loxley.cards` domain). All new code goes under this package; sub-packages per concern: `cards.loxley.{app,game,cli,db,ai}`.
 
 ## Project Structure
 
-Maven multi-module backend under `backend/` (groupId `cards.loxley`, parent `loxley-cards-parent`). Three library modules + one Spring Boot bootstrap module:
+Maven multi-module backend under `backend/` (groupId `cards.loxley`, parent `loxley-cards-parent`). Four library / runner modules + one Spring Boot bootstrap module:
 
 ```
 backend/
@@ -22,6 +22,8 @@ backend/
 │   └── src/main/java/cards/loxley/      # LoxleyCardsApplication + REST controllers + security
 ├── acommon-game-engine/                 # engine + scoring + bot + card defs (artifactId: loxley-cards-game-engine)
 │   └── src/main/java/cards/loxley/game/
+├── acommon-game-cli/                    # standalone Spring Boot CLI runner for engine (artifactId: loxley-cards-game-cli)
+│   └── src/main/java/cards/loxley/cli/  # LoxleyCliApplication + board/hand renderers + move parser
 ├── acommon-db/                          # JPA entities + repos + Flyway migrations (loxley-cards-db)
 │   └── src/main/java/cards/loxley/db/
 └── acommon-ai/                          # AI integrations stub (loxley-cards-ai)
@@ -31,7 +33,7 @@ context/foundation/                      # PRD, shape notes, tech stack, infrast
 frontend/                                # placeholder for Vite + React + TS (not yet scaffolded)
 ```
 
-`app/` depends on the three `acommon-*` modules via `dependencyManagement` declared in `backend/pom.xml`.
+`app/` depends on the `acommon-*` modules via `dependencyManagement` declared in `backend/pom.xml`. `acommon-game-cli` depends on `acommon-game-engine`. Note: `LoxleyCliApplication` declares `@SpringBootApplication(scanBasePackages = {"cards.loxley.cli", "cards.loxley.game"})` so engine beans (which live outside the CLI's own package tree) get discovered — keep this in mind when adding new engine subpackages.
 
 ## Build & Dev Commands
 
@@ -39,9 +41,11 @@ All Maven commands run from `backend/` (the reactor root). Maven wrapper lives t
 
 - `cd backend && ./mvnw clean install` — full multi-module build + tests + install to local `~/.m2/`
 - `cd backend && ./mvnw test` — run tests across all modules
-- `cd backend && ./mvnw -pl app spring-boot:run` — start the dev server (devtools hot-reload enabled). The `-pl app` flag targets the bootstrap module.
+- `cd backend && ./mvnw -pl app spring-boot:run` — start the REST dev server (devtools hot-reload enabled). The `-pl app` flag targets the bootstrap module.
 - `cd backend && ./mvnw -pl app package` — build only the app fat JAR (`backend/app/target/loxley-cards-app-*.jar`)
 - `cd backend && ./mvnw -pl acommon-game-engine test` — run tests for a single library module
+- `cd backend && ./mvnw -pl acommon-game-cli spring-boot:run` — run the standalone engine CLI: bot evaluation (4 matchups × 50 games), opponent-profile evaluation (5 profiles × 30 games), seeded bot-vs-bot simulation, then exit. Useful for smoke-testing the engine end-to-end before REST or the frontend exist.
+- `cd backend && ./mvnw -pl acommon-game-cli spring-boot:run -Dspring-boot.run.profiles=cli-player` — interactive player-vs-bot REPL in the terminal (skips the bot-eval startup runner via `@Profile("!cli-player")`, hands control to `CliGameRunner` reading stdin).
 
 ## Testing
 
