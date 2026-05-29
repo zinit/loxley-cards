@@ -1,18 +1,20 @@
-import { useRef } from 'react';
-import { useNavigate } from 'react-router';
-import { useMapTransform } from '../hooks/useMapTransform';
-import { CAMPAIGN_STAGES } from '../data/campaignStages';
-import StumpMarker from '../components/campaign/StumpMarker';
-import mapImage from '../assets/sherwood-map-4k.webp';
+import { useRef } from 'react'
+import { useNavigate } from 'react-router'
+import { useMapTransform } from '../hooks/useMapTransform'
+import { CAMPAIGN_STAGES } from '../data/campaignStages'
+import { getHighestUnlocked } from '../utils/campaignProgress'
+import StumpMarker from '../components/campaign/StumpMarker'
+import mapImage from '../assets/sherwood-map-4k.webp'
 
-const BASE_MARKER_SIZE = 200;
+const BASE_MARKER_SIZE = 200
 
 function CampaignMap() {
-  const containerRef = useRef<HTMLDivElement>(null);
-  const transform = useMapTransform(containerRef);
-  const navigate = useNavigate();
+  const containerRef = useRef<HTMLDivElement>(null)
+  const transform = useMapTransform(containerRef)
+  const navigate = useNavigate()
+  const highestUnlocked = getHighestUnlocked()
 
-  const markerSize = BASE_MARKER_SIZE * transform.scale;
+  const markerSize = BASE_MARKER_SIZE * transform.scale
 
   return (
     <div
@@ -27,8 +29,17 @@ function CampaignMap() {
       />
 
       {CAMPAIGN_STAGES.map((stage) => {
-        const left = transform.offsetX + stage.position.x * transform.scale;
-        const top = transform.offsetY + stage.position.y * transform.scale;
+        const left = transform.offsetX + stage.position.x * transform.scale
+        const top = transform.offsetY + stage.position.y * transform.scale
+
+        let status: 'active' | 'locked' | 'completed'
+        if (stage.id < highestUnlocked) {
+          status = 'completed'
+        } else if (stage.id === highestUnlocked) {
+          status = 'active'
+        } else {
+          status = 'locked'
+        }
 
         return (
           <div
@@ -43,18 +54,18 @@ function CampaignMap() {
             <StumpMarker
               number={stage.id}
               size={markerSize}
-              status={stage.status}
+              status={status}
               onClick={() => {
-                if (stage.status === 'active') {
-                  navigate(`/game/${stage.id}`);
+                if (status === 'active' || status === 'completed') {
+                  navigate(`/game/${stage.id}`)
                 }
               }}
             />
           </div>
-        );
+        )
       })}
     </div>
-  );
+  )
 }
 
-export default CampaignMap;
+export default CampaignMap

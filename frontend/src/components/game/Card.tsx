@@ -1,45 +1,63 @@
-import type { CardRow } from '../../data/finalDeck';
-import robinImage from '../../assets/cards/robin-placeholder.webp';
-import iconClose from '../../assets/cards/icons/close.webp';
-import iconRanged from '../../assets/cards/icons/ranged.webp';
-import iconSiege from '../../assets/cards/icons/siege.webp';
+import { getCardImage } from '../../data/cardImageMap'
+import iconClose from '../../assets/cards/icons/close.webp'
+import iconRanged from '../../assets/cards/icons/ranged.webp'
+import iconSiege from '../../assets/cards/icons/siege.webp'
 
 interface CardProps {
-  name: string;
-  power: number | null;
-  row: CardRow | null;
-  image?: string;
-  ability?: string | null;
-  size?: number;
-  onClick?: () => void;
-  selected?: boolean;
+  cardId: string
+  name: string
+  currentStrength: number
+  basePower: number | null
+  row: string | null
+  size?: number
+  onClick?: () => void
+  selected?: boolean
+  isValidTarget?: boolean
 }
 
-const ROW_ICONS: Record<CardRow, string> = {
+const ROW_ICONS: Record<string, string> = {
   CLOSE: iconClose,
   RANGED: iconRanged,
   SIEGE: iconSiege,
-};
+}
 
 function Card({
+  cardId,
   name,
-  power,
+  currentStrength,
+  basePower,
   row,
-  image,
   size = 200,
   onClick,
   selected = false,
+  isValidTarget = false,
 }: CardProps) {
-  const width = size * 0.714;
+  const width = size * 0.714
+  const image = getCardImage(cardId)
+
+  let powerClass = 'game-card-power'
+  if (basePower != null && currentStrength < basePower) {
+    powerClass += ' power-reduced'
+  } else if (basePower != null && currentStrength > basePower) {
+    powerClass += ' power-boosted'
+  }
+
+  const cardClasses = [
+    'game-card',
+    selected && 'game-card-selected',
+    isValidTarget && 'board-card-valid-target',
+  ]
+    .filter(Boolean)
+    .join(' ')
 
   return (
     <div
-      className={`game-card ${selected ? 'game-card-selected' : ''}`}
+      className={cardClasses}
       style={{ width: `${width}px`, height: `${size}px` }}
       onClick={onClick}
     >
       <img
-        src={image ?? robinImage}
+        src={image}
         alt={name}
         className="game-card-portrait"
         draggable={false}
@@ -47,9 +65,11 @@ function Card({
 
       <div className="game-card-frame" />
 
-      {power !== null && <div className="game-card-power">{power}</div>}
+      {basePower !== null && (
+        <div className={powerClass}>{currentStrength}</div>
+      )}
 
-      {row !== null && (
+      {row !== null && ROW_ICONS[row] && (
         <img
           src={ROW_ICONS[row]}
           alt={row}
@@ -60,7 +80,7 @@ function Card({
 
       <div className="game-card-name">{name}</div>
     </div>
-  );
+  )
 }
 
-export default Card;
+export default Card
