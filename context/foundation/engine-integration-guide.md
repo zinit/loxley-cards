@@ -1,6 +1,6 @@
 # Loxley Cards — Engine Integration Guide
 
-> Przewodnik integracji z silnikiem Loxley Cards (`backend/acommon-game-engine/`) dla S-03 (REST controllers integrujące engine z frontendem) i innych konsumentów.
+> Przewodnik integracji z silnikiem Loxley Cards (`backend/acommon-game-engine/`) dla S-02 (REST controllers wystawiające engine przez API — `playable-game-api`) i innych konsumentów.
 > Status: pasuje do stanu kodu po F-01 (230 testów zielonych w reactorze — 200 engine + 29 cli + 1 app).
 > Czytelnik: osoba budująca REST/WebSocket layer w `app/` module, lub inny consumer engine'a.
 
@@ -98,7 +98,7 @@ public class GameStateFactory {
 |---|---|
 | `newGame(Deck, Deck)` | Custom mecz z dowolnymi taliami. Używa default `Random` (nondeterministic). |
 | `newGame(Deck, Deck, Random)` | Jak wyżej, ale z konkretnym seedem. Dla testów lub reprodukowalności. |
-| `newCampaignGame(CampaignStage)` | **Domyślny entry point dla S-03 (REST campaign play).** Gracz wybiera etap, fabryka konstruuje grę z odpowiednim deck variant dla bota. |
+| `newCampaignGame(CampaignStage)` | **Domyślny entry point dla S-02 (REST campaign play).** Gracz wybiera etap, fabryka konstruuje grę z odpowiednim deck variant dla bota. |
 | `newCampaignGame(CampaignStage, Random)` | Seedowana wersja kampanii. |
 | `toDeck(DeckVariant)` | Konwersja `DeckVariant` (JSON) → `Deck` (runtime). Rzadko potrzebne na poziomie web. |
 
@@ -335,7 +335,7 @@ public record MatchEnded(Optional<Player> winner, int totalRounds) implements Ma
 
 **Resilience:** wyjątek z listener'a → log warn, kontynuuje pozostałymi listenerami. Twój `RuntimeException` nie zablokuje innych broadcasterów.
 
-**Aktualne listenery:** tylko jeden — `DrawOnRoundWinListener` (faction passive). Dla REST/WebSocket integration (S-03) dorzucisz `WebSocketBroadcastListener`.
+**Aktualne listenery:** tylko jeden — `DrawOnRoundWinListener` (faction passive). Dla REST integration (S-02) możesz dorzucić własny event listener jeśli potrzebny; ewentualna WebSocket integration (gdyby kiedyś weszła) wymaga `WebSocketBroadcastListener`.
 
 ### 2.6. Eval (dla CI / regression testów)
 
@@ -574,7 +574,7 @@ Skomplikowane, niepotrzebne dla single-game-per-player MVP. Pomijam.
 
 Świadome lub przypadkowe, ale do uwzględnienia:
 
-- **Wszystkie mutatory `PlayerState` i `GameState` są `public`.** Cokolwiek ma referencję do `GameState` może obejść `TurnOrchestrator` i namieszać. Engine to akceptuje bo executor żyje w innym pakiecie i potrzebuje mutować — REST layer (S-03) może rozważyć fasadę `GameSession` która eksponuje tylko `playTurn`.
+- **Wszystkie mutatory `PlayerState` i `GameState` są `public`.** Cokolwiek ma referencję do `GameState` może obejść `TurnOrchestrator` i namieszać. Engine to akceptuje bo executor żyje w innym pakiecie i potrzebuje mutować — REST layer (S-02) może rozważyć fasadę `GameSession` która eksponuje tylko `playTurn`.
 - **List views są live**, nie snapshoty. `hand()` zwraca `Collections.unmodifiableList(internalList)`. Jeśli przed mutacją zachowasz `List<CardInstance> snapshot = state.p1().hand()`, po mutacji `snapshot.size()` zwróci nową wartość. Snapshot tylko przy momencie wywołania (np. zaraz zserializuj do JSON).
 
 ### 4.4. Brak globalnego state
@@ -663,7 +663,7 @@ Tylko dla bardzo specyficznych use cases (np. mecze offline single player gdzie 
 
 ### 5.4. Rekomendacja
 
-Dla S-03 (pierwsza REST integration): **Wzorzec A + per-game synchronized lock** (sekcja 4.2 Opcja 1). 30 linii kodu, działa.
+Dla S-02 (pierwsza REST integration): **Wzorzec A + per-game synchronized lock** (sekcja 4.2 Opcja 1). 30 linii kodu, działa.
 
 Później (deploy na produkcję) można dorzucić Redis jako external store + sticky sessions. Migracja jest płaska bo `GameState` jest serializowalny (z zastrzeżeniami z sekcji 6).
 
@@ -1130,7 +1130,7 @@ client.connect({}, () => {
 
 ## 10. Konfiguracja Spring — przygotowanie `app/` module do REST integration
 
-**Kontekst architektury:** sekcja dotyczy modułu `backend/app/` (gdzie żyje `LoxleyCardsApplication`, planowany dom dla REST controllerów w S-03). Moduł `backend/acommon-game-cli/` (z `LoxleyCliApplication`) zostaje bez zmian — to standalone CLI runner z osobnym lifecycle'em, nie miesza się z web mode.
+**Kontekst architektury:** sekcja dotyczy modułu `backend/app/` (gdzie żyje `LoxleyCardsApplication`, planowany dom dla REST controllerów w S-02). Moduł `backend/acommon-game-cli/` (z `LoxleyCliApplication`) zostaje bez zmian — to standalone CLI runner z osobnym lifecycle'em, nie miesza się z web mode.
 
 ### 10.1. application.properties
 
@@ -1140,7 +1140,7 @@ client.connect({}, () => {
 spring.application.name=loxley-cards
 ```
 
-**Dla S-03 (REST mode) — dodaj:**
+**Dla S-02 (REST mode) — dodaj:**
 
 ```properties
 # Web layer
