@@ -6,6 +6,7 @@ interface MetaPanelProps {
   deckSize: number
   graveyardSize: number
   showBotThinking?: boolean
+  passed?: boolean
 }
 
 function MetaPanel({
@@ -16,6 +17,7 @@ function MetaPanel({
   deckSize,
   graveyardSize,
   showBotThinking = false,
+  passed = false,
 }: MetaPanelProps) {
   return (
     <div className={`board-meta board-meta-${side}`}>
@@ -45,6 +47,9 @@ function MetaPanel({
       <div className="board-meta-right">
         {showBotThinking && (
           <div className="bot-thinking">Bot is thinking...</div>
+        )}
+        {side === 'opponent' && passed && !showBotThinking && (
+          <div className="opponent-passed">PASSED</div>
         )}
         <div className="board-hand-info">
           <div className="hand-count">{handCount}</div>

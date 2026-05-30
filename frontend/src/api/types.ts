@@ -1,3 +1,10 @@
+export interface LastMoveView {
+  player: string
+  kind: string
+  cardName: string | null
+  rowKind: string | null
+}
+
 export interface GameStateView {
   gameId: string
   roundNumber: number
@@ -9,6 +16,8 @@ export interface GameStateView {
   opponent: OpponentView
   roundHistory: RoundResultView[]
   legalMoves: MoveView[]
+  yourLastMove: LastMoveView | null
+  opponentLastMove: LastMoveView | null
 }
 
 export interface PlayerView {

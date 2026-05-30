@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { useEffect, useRef } from 'react'
 import type { RoundResultView } from '../../api/types'
 
 interface RoundOverlayProps {
@@ -7,10 +7,12 @@ interface RoundOverlayProps {
 }
 
 function RoundOverlay({ roundResult, onDismiss }: RoundOverlayProps) {
+  const dismissRef = useRef(onDismiss)
+  dismissRef.current = onDismiss
   useEffect(() => {
-    const t = setTimeout(onDismiss, 3000)
+    const t = setTimeout(() => dismissRef.current(), 3000)
     return () => clearTimeout(t)
-  }, [onDismiss])
+  }, [])
 
   const playerWon = roundResult.winner === 'P1'
   const draw = roundResult.winner === null

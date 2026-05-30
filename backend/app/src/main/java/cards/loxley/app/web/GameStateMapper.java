@@ -32,6 +32,12 @@ public class GameStateMapper {
 
     public GameStateView toView(GameState state, String gameId, Player perspective,
                                 List<Move> legalMoves) {
+        return toView(state, gameId, perspective, legalMoves, null, null);
+    }
+
+    public GameStateView toView(GameState state, String gameId, Player perspective,
+                                List<Move> legalMoves,
+                                Move playerMove, Move botMove) {
         Player opponent = perspective.opponent();
         return new GameStateView(
                 gameId,
@@ -43,7 +49,9 @@ public class GameStateMapper {
                 toPlayerView(state, perspective),
                 toOpponentView(state, opponent),
                 state.roundHistory().stream().map(this::toRoundResultView).toList(),
-                legalMoves.stream().map(m -> toMoveView(m, state)).toList()
+                legalMoves.stream().map(m -> toMoveView(m, state)).toList(),
+                toLastMoveView(playerMove, state, "you"),
+                toLastMoveView(botMove, state, "opponent")
         );
     }
 
@@ -166,5 +174,57 @@ public class GameStateMapper {
                 rr.p2Score(),
                 rr.winner().map(Enum::name).orElse(null)
         );
+    }
+
+    private LastMoveView toLastMoveView(Move move, GameState state, String playerLabel) {
+        if (move == null) return null;
+        return switch (move) {
+            case PassMove m -> new LastMoveView(playerLabel, "PASS", null, null);
+            case UseLeaderMove m -> new LastMoveView(playerLabel, "LEADER", null, null);
+            case PlayCardMove m -> {
+                String cardName = findCardName(m.handInstanceId(), m.player(), state);
+                String rowKind = m.targetRow() != null ? m.targetRow().name() : null;
+                String kind = determinePlayCardKindFromState(m, state);
+                yield new LastMoveView(playerLabel, kind, cardName, rowKind);
+            }
+        };
+    }
+
+    private String findCardName(String instanceId, Player player, GameState state) {
+        CardInstance ci = findCardInstance(instanceId, player, state);
+        return ci != null ? ci.card().name() : null;
+    }
+
+    private String determinePlayCardKindFromState(PlayCardMove m, GameState state) {
+        // After execution, card is no longer in hand — search board/graveyard
+        String instanceId = m.handInstanceId();
+        Player player = m.player();
+        CardInstance found = findCardInstance(instanceId, player, state);
+        if (found != null && found.card().cardType() == CardType.UNIT) {
+            if (found.card().abilities().contains(AbilityCodes.SPY)) return "SPY";
+            return "UNIT";
+        }
+        if (m.targetInstanceId() != null) return "UNIT_TARGET";
+        if (m.targetRow() != null) return "ROW";
+        return "SPECIAL";
+    }
+
+    private CardInstance findCardInstance(String instanceId, Player player, GameState state) {
+        PlayerState ps = state.playerState(player);
+        for (RowId rowId : RowId.values()) {
+            for (CardInstance ci : ps.board().row(rowId).units()) {
+                if (ci.instanceId().equals(instanceId)) return ci;
+            }
+        }
+        for (CardInstance ci : ps.graveyard()) {
+            if (ci.instanceId().equals(instanceId)) return ci;
+        }
+        PlayerState opponent = state.playerState(player.opponent());
+        for (RowId rowId : RowId.values()) {
+            for (CardInstance ci : opponent.board().row(rowId).units()) {
+                if (ci.instanceId().equals(instanceId)) return ci;
+            }
+        }
+        return null;
     }
 }

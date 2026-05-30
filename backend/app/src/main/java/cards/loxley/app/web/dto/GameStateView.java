@@ -12,6 +12,8 @@ public record GameStateView(
         PlayerView you,
         OpponentView opponent,
         List<RoundResultView> roundHistory,
-        List<MoveView> legalMoves
+        List<MoveView> legalMoves,
+        LastMoveView yourLastMove,
+        LastMoveView opponentLastMove
 ) {
 }

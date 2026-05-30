@@ -1,5 +1,5 @@
 import { useReducer } from 'react'
-import type { GameStateView, MoveView, RoundResultView } from '../api/types'
+import type { GameStateView, LastMoveView, MoveView, RoundResultView } from '../api/types'
 
 export type GamePhase =
   | 'idle'
@@ -19,6 +19,8 @@ export interface GameUIState {
   phase: GamePhase
   error: string | null
   roundResult: RoundResultView | null
+  yourLastMove: LastMoveView | null
+  opponentLastMove: LastMoveView | null
 }
 
 export type GameAction =
@@ -28,6 +30,7 @@ export type GameAction =
   | { type: 'MOVE_SUBMITTING' }
   | { type: 'MOVE_RESULT'; payload: GameStateView }
   | { type: 'ROUND_DISMISSED' }
+  | { type: 'TOAST_DISMISSED' }
   | { type: 'RESTART_GAME' }
   | { type: 'ERROR'; payload: string }
   | { type: 'ERROR_DISMISSED' }
@@ -64,6 +67,8 @@ function gameReducer(state: GameUIState, action: GameAction): GameUIState {
         validTargets: [],
         targetingMode: null,
         roundResult: null,
+        yourLastMove: action.payload.yourLastMove ?? null,
+        opponentLastMove: action.payload.opponentLastMove ?? null,
       }
 
     case 'CARD_SELECTED': {
@@ -110,6 +115,8 @@ function gameReducer(state: GameUIState, action: GameAction): GameUIState {
         phase: nextPhase,
         roundResult,
         error: null,
+        yourLastMove: action.payload.yourLastMove ?? null,
+        opponentLastMove: action.payload.opponentLastMove ?? null,
       }
     }
 
@@ -118,6 +125,15 @@ function gameReducer(state: GameUIState, action: GameAction): GameUIState {
         ...state,
         phase: 'idle',
         roundResult: null,
+        yourLastMove: null,
+        opponentLastMove: null,
+      }
+
+    case 'TOAST_DISMISSED':
+      return {
+        ...state,
+        yourLastMove: null,
+        opponentLastMove: null,
       }
 
     case 'RESTART_GAME':
@@ -130,6 +146,8 @@ function gameReducer(state: GameUIState, action: GameAction): GameUIState {
         phase: 'loading',
         error: null,
         roundResult: null,
+        yourLastMove: null,
+        opponentLastMove: null,
       }
 
     case 'ERROR':
@@ -161,6 +179,8 @@ const initialState: GameUIState = {
   phase: 'loading',
   error: null,
   roundResult: null,
+  yourLastMove: null,
+  opponentLastMove: null,
 }
 
 export function useGameReducer() {

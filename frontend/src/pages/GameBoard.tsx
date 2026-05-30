@@ -1,18 +1,20 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { useNavigate, useParams } from 'react-router'
+import { useNavigate, useParams, useSearchParams } from 'react-router'
 import { GameProvider, useGame } from '../contexts/GameContext'
-import { createGame, makeMove } from '../api/gameApi'
+import { createGame, getGameState, makeMove } from '../api/gameApi'
 import type { MoveRequest } from '../api/types'
 import BoardRow from '../components/game/BoardRow'
 import MetaPanel from '../components/game/MetaPanel'
 import PlayerHand from '../components/game/PlayerHand'
 import RoundOverlay from '../components/game/RoundOverlay'
 import MatchEndScreen from '../components/game/MatchEndScreen'
+import MoveToast from '../components/game/MoveToast'
 import { unlockStage } from '../utils/campaignProgress'
 import tableStumpImage from '../assets/markers/table-stump.webp'
 
 function GameBoardInner() {
   const { stageId } = useParams<{ stageId: string }>()
+  const [searchParams] = useSearchParams()
   const navigate = useNavigate()
   const { state, dispatch } = useGame()
   const { gameState, selectedCardInstanceId, validTargets, targetingMode, phase, error } = state
@@ -29,8 +31,12 @@ function GameBoardInner() {
     const t1 = setTimeout(() => setStumpIn(true), 16)
     const t2 = setTimeout(() => setBoardIn(true), 700)
 
-    const stageNumber = parseInt(stageId ?? '1', 10)
-    createGame(stageNumber)
+    const existingGameId = searchParams.get('gameId')
+    const loadGame = existingGameId
+      ? getGameState(existingGameId)
+      : createGame(parseInt(stageId ?? '1', 10))
+
+    loadGame
       .then((gs) => {
         gameIdRef.current = gs.gameId
         dispatch({ type: 'GAME_LOADED', payload: gs })
@@ -45,7 +51,7 @@ function GameBoardInner() {
       exitTimers.current.forEach(clearTimeout)
       if (botTimerRef.current) clearTimeout(botTimerRef.current)
     }
-  }, [stageId, dispatch])
+  }, [stageId, searchParams, dispatch])
 
   // Unlock next stage on match victory
   useEffect(() => {
@@ -68,6 +74,7 @@ function GameBoardInner() {
   // Play Again handler
   const handlePlayAgain = useCallback(() => {
     dispatch({ type: 'RESTART_GAME' })
+    gameIdRef.current = null
     const stageNumber = parseInt(stageId ?? '1', 10)
     createGame(stageNumber)
       .then((gs) => {
@@ -283,6 +290,14 @@ function GameBoardInner() {
         />
       )}
 
+      {phase === 'idle' && (state.yourLastMove || state.opponentLastMove) && (
+        <MoveToast
+          yourLastMove={state.yourLastMove}
+          opponentLastMove={state.opponentLastMove}
+          onDismiss={() => dispatch({ type: 'TOAST_DISMISSED' })}
+        />
+      )}
+
       <div className="game-board" onClick={handleBoardClick}>
         {gameState ? (
           <>
@@ -296,6 +311,7 @@ function GameBoardInner() {
                 deckSize={gameState.opponent.deckSize}
                 graveyardSize={gameState.opponent.graveyardSize}
                 showBotThinking={phase === 'waiting-for-bot'}
+                passed={gameState.opponent.passed}
               />
               <BoardRow row={gameState.opponent.board.siege} rowId="SIEGE" side="opponent" isValidTarget={isRowValidTarget('SIEGE', 'opponent')} onRowClick={() => handleRowClick('SIEGE', 'opponent')} validTargetUnitIds={validTargetUnitIds} onUnitClick={handleUnitClick} />
               <BoardRow row={gameState.opponent.board.ranged} rowId="RANGED" side="opponent" isValidTarget={isRowValidTarget('RANGED', 'opponent')} onRowClick={() => handleRowClick('RANGED', 'opponent')} validTargetUnitIds={validTargetUnitIds} onUnitClick={handleUnitClick} />

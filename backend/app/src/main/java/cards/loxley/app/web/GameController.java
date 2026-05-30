@@ -59,9 +59,9 @@ public class GameController {
         String gameId = sessionStore.create(state, stage);
 
         synchronized (sessionStore.lock(gameId)) {
-            driveBotMoves(state, gameId);
+            Move lastBotMove = driveBotMoves(state, gameId);
             List<Move> legalMoves = generator.legalMoves(state, Player.P1);
-            return mapper.toView(state, gameId, Player.P1, legalMoves);
+            return mapper.toView(state, gameId, Player.P1, legalMoves, null, lastBotMove);
         }
     }
 
@@ -81,23 +81,25 @@ public class GameController {
                                   @RequestBody MoveRequest request) {
         GameState state = sessionStore.findOrThrow(gameId);
         synchronized (sessionStore.lock(gameId)) {
-            Move move = mapMove(request, state);
+            Move playerMove = mapMove(request, state);
             try {
-                orchestrator.playTurn(state, move);
+                orchestrator.playTurn(state, playerMove);
             } catch (IllegalStateException e) {
                 throw new GameStateException(e.getMessage(), e);
             }
 
-            driveBotMoves(state, gameId);
+            Move lastBotMove = driveBotMoves(state, gameId);
 
             List<Move> legalMoves = state.matchEnded()
                     ? List.of()
                     : generator.legalMoves(state, Player.P1);
-            return mapper.toView(state, gameId, Player.P1, legalMoves);
+            return mapper.toView(state, gameId, Player.P1, legalMoves,
+                    playerMove, lastBotMove);
         }
     }
 
-    private void driveBotMoves(GameState state, String gameId) {
+    private Move driveBotMoves(GameState state, String gameId) {
+        Move lastBotMove = null;
         int safety = 0;
         while (!state.matchEnded() && state.currentTurn() == Player.P2) {
             if (++safety > 200) {
@@ -108,13 +110,14 @@ public class GameController {
             OpponentProfile profile = profileRegistry.findById(
                     sessionStore.findStageOrThrow(gameId).opponentProfileId()).orElseThrow();
             BotStrategy bot = botResolver.resolve(profile.strategyName());
-            Move botMove = bot.chooseMove(state, Player.P2, legal);
+            lastBotMove = bot.chooseMove(state, Player.P2, legal);
             try {
-                orchestrator.playTurn(state, botMove);
+                orchestrator.playTurn(state, lastBotMove);
             } catch (IllegalStateException e) {
                 throw new GameStateException(e.getMessage(), e);
             }
         }
+        return lastBotMove;
     }
 
     private Move mapMove(MoveRequest req, GameState state) {
