@@ -1,13 +1,13 @@
 # Repository Guidelines
 
-Loxley-cards is a Gwint-inspired web card game — Spring Boot 4.0.6 backend (Java 21, Maven) with a planned React/TypeScript SPA frontend. Single-player campaign vs bot, magic-link auth, PostgreSQL persistence.
+Loxley-cards is a Gwint-inspired web card game — Spring Boot 4.0.6 backend (Java 21, Maven) with a planned React/TypeScript SPA frontend. Single-player campaign vs bot, username + password auth (BCrypt + JWT), PostgreSQL persistence.
 
 ## Hard Rules
 
 - Keep game engine logic (scoring, card abilities, round resolution) in the `acommon-game-engine` module — not in controllers or the `app` module. See @context/foundation/tech-stack.md for the planned module layout.
-- Email is the only personal data stored. No tracking, analytics, or marketing cookies.
-- Use Supabase ONLY as managed PostgreSQL provider (JDBC via Spring HikariCP). Do NOT add Supabase JS SDK, Supabase Auth, Supabase Storage, Realtime, or Edge Functions — these are explicit out-of-scope (see @context/foundation/infrastructure.md). Magic-link auth is implemented natively in Spring Boot.
-- Magic-link emails go through the Resend API (`@RestClient` / HTTP). Do NOT attempt direct SMTP — VPS providers (Hetzner included) block port 25 by anti-spam policy.
+- No personal data is collected by default — login uses a user-chosen `username` (any string) and a BCrypt-hashed password. The `email` column on `User` is reserved for future use and unused in MVP. **Schema state (post-F-03):** `email` is `VARCHAR(255) NULL UNIQUE` — nullable (anonymous users) but unique when set (future password reset / notification flows depend on it). Postgres treats `NULL` rows as distinct under `UNIQUE`, so multiple users without email coexist without collision (H2 behaves the same way; verified in `UserRepositoryTests`). V3 migration kept the unique index — per F-03 plan-review 2026-06-13, dropping it would require Postgres-specific `DROP CONSTRAINT users_email_key` which is not portable to H2 test profile. No tracking, analytics, or marketing cookies.
+- Use Supabase ONLY as managed PostgreSQL provider (JDBC via Spring HikariCP). Do NOT add Supabase JS SDK, Supabase Auth, Supabase Storage, Realtime, or Edge Functions — these are explicit out-of-scope (see @context/foundation/infrastructure.md). Authentication is implemented natively in Spring Security (username + BCrypt password hash + JWT in HTTPOnly cookie).
+- No transactional mail service in MVP. Do NOT add Resend, SMTP, Mailgun, or any email-sending dependency. No magic-link auth, no password reset (manual DB intervention if a user forgets their password), no notifications.
 - Java base package is `cards.loxley` (reverse of `loxley.cards` domain). All new code goes under this package; sub-packages per concern: `cards.loxley.{app,game,cli,db,ai}`.
 
 ## Project Structure
@@ -60,7 +60,7 @@ All Maven commands run from `backend/` (the reactor root). Maven wrapper lives t
 
 - PRD and design decisions: @context/foundation/prd.md
 - Tech stack rationale, Java package, module plan: @context/foundation/tech-stack.md
-- Infrastructure decisions (platform, DB, mail, domain, risk register): @context/foundation/infrastructure.md
+- Infrastructure decisions (platform, DB, domain, risk register): @context/foundation/infrastructure.md
 - Domain: `loxley.cards` (apex → frontend on Cloudflare Pages, `api.loxley.cards` → backend on Hetzner VPS).
 - Database: Supabase managed PostgreSQL (Frankfurt region) — connection via `DATABASE_URL` env var on transaction-pooled port 6543.
-- Mail: Resend API for magic-link delivery (`RESEND_API_KEY` env var).
+- Auth: Spring Security (username + BCrypt hash + JWT in HTTPOnly cookie). Secret: `JWT_SECRET` env var. No mail service.

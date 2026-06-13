@@ -20,13 +20,13 @@ hints:
   java_group_id: cards.loxley
   java_base_package: cards.loxley
   database_provider: supabase
-  mail_service: resend
+  mail_service: none
   domain: loxley.cards
 ---
 
 ## Why this stack
 
-Solo developer shipping a Gwint-inspired card game as a split-stack monorepo (Java backend + React/TS frontend) within 3 weeks after-hours. Spring Boot is the recommended default for `(web-app, java)` and clears all four agent-friendly gates (typed, convention-based, popular in training data, well-documented). The multi-module Maven architecture with game engine, DB, and AI modules fits Spring's DI and module conventions naturally. Auth via magic link is the only technology-forcing feature; no payments, realtime, or AI integration in MVP scope. Deployment targets self-host backend (Docker on Hetzner Cloud VPS CX22 in `fsn1` Falkenstein) with managed PostgreSQL via Supabase Free tier (`aws-eu-central-1` Frankfurt) and Cloudflare Pages for the frontend. Magic-link mailing via Resend. Domain: `loxley.cards` (apex → frontend on Cloudflare Pages, `api.loxley.cards` → backend on Hetzner). CI runs on GitHub Actions with auto-deploy-on-merge — standard for solo projects with shipping-first discipline. Full platform rationale and risk register in @context/foundation/infrastructure.md.
+Solo developer shipping a Gwint-inspired card game as a split-stack monorepo (Java backend + React/TS frontend) within 3 weeks after-hours. Spring Boot is the recommended default for `(web-app, java)` and clears all four agent-friendly gates (typed, convention-based, popular in training data, well-documented). The multi-module Maven architecture with game engine, DB, and AI modules fits Spring's DI and module conventions naturally. Auth via Spring Security (username + BCrypt hash, JWT in HTTPOnly cookie) — świadomie wybrane zamiast magic-linka, żeby uniknąć zależności od email-providera (Daniel ma Resend pod inną domeną na free planie; verified domain pod `loxley.cards` byłaby blockerem do F-03). No payments, realtime, or AI integration in MVP scope. Deployment targets self-host backend (Docker on Hetzner Cloud VPS CX22 in `fsn1` Falkenstein) with managed PostgreSQL via Supabase Free tier (`aws-eu-central-1` Frankfurt) and Cloudflare Pages for the frontend. No transactional mail service in MVP (no password reset, no notifications). Domain: `loxley.cards` (apex → frontend on Cloudflare Pages, `api.loxley.cards` → backend on Hetzner). CI runs on GitHub Actions with auto-deploy-on-merge — standard for solo projects with shipping-first discipline. Full platform rationale and risk register in @context/foundation/infrastructure.md.
 
 ## Frontend (companion project)
 
@@ -47,7 +47,7 @@ Standalone Vite + React + TS SPA, bring-your-own backend (komunikacja z backende
 - provider: Supabase Free tier, region `aws-eu-central-1` (Frankfurt) — ~10ms od Hetzner Falkenstein
 - connection: backend module `acommon-db` via JDBC (Spring Data JPA + HikariCP, transaction-pooled przez Supabase pgbouncer na porcie 6543)
 
-Magic link tokens + user progres per email + zapis stanu kampanii wymagają relacyjnej DB z transakcjami. **Supabase managed PostgreSQL** eliminuje burden ops (backups, monitoring, vacuum tuning, port exposure) bez wprowadzania BaaS dependency — używamy **wyłącznie** jako Postgres provider. Supabase Auth, Storage, Realtime i Edge Functions są jawnie OUT OF SCOPE (zobacz @context/foundation/infrastructure.md).
+User accounts (username + BCrypt password hash) + zapis stanu kampanii per user + progres wymagają relacyjnej DB z transakcjami. **Supabase managed PostgreSQL** eliminuje burden ops (backups, monitoring, vacuum tuning, port exposure) bez wprowadzania BaaS dependency — używamy **wyłącznie** jako Postgres provider. Supabase Auth, Storage, Realtime i Edge Functions są jawnie OUT OF SCOPE (zobacz @context/foundation/infrastructure.md).
 
 **Spring side:** `pom.xml` dependencies — `spring-boot-starter-data-jpa` + `org.postgresql:postgresql` driver + `flyway-core` + `flyway-database-postgresql` + `spring-boot-flyway` (SB4 per-tech autoconfig split — bez tego Flyway nie startuje). HikariCP `maximum-pool-size=10` (zostawiamy 5 connections w reserve dla Supabase Free pgbouncer limit of 15). **pgbouncer transaction-mode gotcha:** wymaga `prepareThreshold=0` w JDBC driver properties (`spring.datasource.hikari.data-source-properties.prepareThreshold=0`) — bez tego server-side prepared statements kolizjują przy connection reuse ("prepared statement S_X already exists"). Schema migrations via Flyway (forward-only); rollback przez reverse migration.
 

@@ -10,26 +10,26 @@ tech_stack:
   runtime: jvm
   database: postgresql-16 (managed by Supabase, EU region)
   frontend_host: cloudflare-pages
-  mail_service: resend
+  mail_service: none
   domain: loxley.cards
   vps_type: hetzner-cx22-fsn1
 ---
 
 ## Recommendation
 
-**Backend on Hetzner Cloud VPS (CX22 in `fsn1` Falkenstein), database on Supabase (managed PostgreSQL), email via Resend, frontend on Cloudflare Pages, all under `loxley.cards`.**
+**Backend on Hetzner Cloud VPS (CX22 in `fsn1` Falkenstein), database on Supabase (managed PostgreSQL), no transactional email service, frontend on Cloudflare Pages, all under `loxley.cards`.**
 
 The developer has strong ops familiarity with Hetzner VPS (Docker, systemd, nginx, certbot) and consciously accepts the operational overhead that managed PaaS platforms would absorb. EU data center location (Falkenstein) provides ~30ms latency for the target persona (PL-based users) — substantially better than the US-West default of Railway or Render. The cost (~$4/mo CX22) is competitive with Railway's Hobby tier while providing full pipeline control (Dockerfile + GitHub Actions), no vendor lock-in on build tooling, and unrestricted JVM resource allocation on 2 vCPU / 4 GB RAM.
 
-**Supabase as managed PostgreSQL only** — connected via JDBC from Spring Boot (HikariCP pool + Supabase pgbouncer). Supabase Auth, Storage, Realtime and Edge Functions are explicitly NOT used; magic-link authentication is implemented natively in Spring Boot (token generation, validation, expiry) with email delivery via Resend. This removes self-hosted Postgres operational burden (backups, monitoring, exposure, vacuum tuning) without taking on Supabase BaaS dependency.
+**Supabase as managed PostgreSQL only** — connected via JDBC from Spring Boot (HikariCP pool + Supabase pgbouncer). Supabase Auth, Storage, Realtime and Edge Functions are explicitly NOT used; authentication is implemented natively in Spring Boot (username + BCrypt password hash + JWT in HTTPOnly cookie). This removes self-hosted Postgres operational burden (backups, monitoring, exposure, vacuum tuning) without taking on Supabase BaaS dependency.
 
-**Magic-link emails via Resend** — Daniel has prior familiarity. Free tier (3,000 emails/mo) covers MVP traffic with headroom.
+**No transactional email service** — auth flow is username + hasło (zero email dependency), no password reset, no notifications, no marketing mail. Świadoma decyzja przed F-03: Daniel ma konto Resend ale pod inną domeną (free plan = 1 verified domain), a weryfikacja `loxley.cards` przez SPF/DKIM/DMARC byłaby blockerem do F-03. Tradeoff: jeśli userek zapomni hasła, kontakt manualny + reset hash w DB (akceptowalne dla 5–10 znajomych). Jeśli kiedyś będzie potrzebny mail (notyfikacje, reset, marketing), wracamy do Resend / Mailgun / Postmark.
 
 **Frontend on Cloudflare Pages** — free tier, native git integration, global CDN. Routes to `loxley.cards` apex; backend exposed at `api.loxley.cards`.
 
 The decision was made after a structured anti-bias cross-check that surfaced operational risks — all accepted with concrete mitigations documented in the risk register below.
 
-**Total MVP cost: ~$4/mo** (Hetzner CX22 only — Supabase Free, Resend Free, Cloudflare Pages Free, domain already owned).
+**Total MVP cost: ~$4/mo** (Hetzner CX22 only — Supabase Free, Cloudflare Pages Free, no mail service, domain already owned).
 
 ## Platform Comparison
 
@@ -75,7 +75,7 @@ Strong CLI (`flyctl`) and managed Firecracker microVMs. Managed Postgres at $38/
 
 ### Pre-Mortem — How This Could Fail
 
-The developer deployed Spring Boot on a Hetzner CX22 in Falkenstein, connected via JDBC to a Supabase Free tier Postgres in Frankfurt, with magic-link auth sending through Resend. It worked perfectly for a month — friends played the first campaign stage, scores were saved, the developer celebrated the first deploy. Then Supabase paused the free-tier project after one quiet week (no requests = paused), and Spring Boot's HikariCP pool started rejecting connections with cryptic timeout errors. The developer didn't notice until a friend messaged "magic link not arriving" — but the email was sent fine; the issue was that the auth controller couldn't write the token to the (paused) DB and Resend got called but the JWT was never stored, so the click flow failed at validation. UptimeRobot was hitting `/actuator/health` which returned 200 from the app's HTTP layer without touching the DB. Recovery took an hour to diagnose (Spring Boot stack trace pointed to JDBC, not to "Supabase project paused") and a Supabase dashboard click to unpause. Lesson: free tier project pausing + app-level health check that doesn't exercise the DB = silent multi-hour outage.
+The developer deployed Spring Boot on a Hetzner CX22 in Falkenstein, connected via JDBC to a Supabase Free tier Postgres in Frankfurt, with username + password auth (BCrypt + JWT). It worked perfectly for a month — friends played the first campaign stage, scores were saved, the developer celebrated the first deploy. Then Supabase paused the free-tier project after one quiet week (no requests = paused), and Spring Boot's HikariCP pool started rejecting connections with cryptic timeout errors. The developer didn't notice until a friend messaged "nie mogę się zalogować, wisi" — login form posted credentials, Spring Security tried to load the user by username via JPA, the JDBC connection timed out, and the user saw a generic 500 / "coś poszło nie tak". UptimeRobot was hitting `/actuator/health` which returned 200 from the app's HTTP layer without touching the DB. Recovery took an hour to diagnose (Spring Boot stack trace pointed to JDBC, not to "Supabase project paused") and a Supabase dashboard click to unpause. Lesson: free tier project pausing + app-level health check that doesn't exercise the DB = silent multi-hour outage.
 
 ### Unknown Unknowns
 
@@ -87,10 +87,10 @@ The developer deployed Spring Boot on a Hetzner CX22 in Falkenstein, connected v
 ## Operational Story
 
 - **Preview deploys**: No native preview environments on Hetzner. Branch deploys require a second VPS or Docker Compose profile with a different port + nginx virtual host. Practical MVP alternative: test locally with `docker compose up`, deploy to production on merge to `main`.
-- **Secrets**: Environment variables stored in GitHub Secrets (for CI/CD: `HETZNER_SSH_KEY`, `HETZNER_HOST`, `DOCKER_REGISTRY_TOKEN`) and `.env` file on the VPS (for Docker Compose: `DATABASE_URL` from Supabase, `RESEND_API_KEY`, `MAGIC_LINK_JWT_SECRET`). The `.env` file is NOT committed to git. Rotation: SSH into VPS, edit `.env`, `docker compose up -d` to restart. Supabase DB URL rotation requires updating both `.env` on VPS and any local dev setup. `hcloud` API token scoped to the project.
+- **Secrets**: Environment variables stored in GitHub Secrets (for CI/CD: `HETZNER_SSH_KEY`, `HETZNER_HOST`, `DOCKER_REGISTRY_TOKEN`) and `.env` file on the VPS (for Docker Compose: `DATABASE_URL` from Supabase, `JWT_SECRET` for session signing). The `.env` file is NOT committed to git. Rotation: SSH into VPS, edit `.env`, `docker compose up -d` to restart. Supabase DB URL rotation requires updating both `.env` on VPS and any local dev setup. `hcloud` API token scoped to the project.
 - **Rollback**: `docker pull <registry>/<image>:<previous-tag>` + `docker compose up -d`. Requires consistent image tagging in CI (use git SHA as tag). Database rollback is manual — Flyway/Liquibase migrations are forward-only; schema rollback requires writing a reverse migration. Supabase Free has daily backups (7-day retention) — restore via Supabase dashboard, NOT automated.
-- **Approval**: Human-only operations: VPS deletion, firewall rule changes, DNS changes (loxley.cards subdomains), Supabase project changes, Resend domain verification, SSH key rotation. Agent may: deploy new image versions, restart containers, tail logs, query read-only DB statements, read Supabase metrics via API.
-- **Logs**: `ssh <vps> docker compose logs -f app` for Spring Boot logs. Supabase DB logs accessible via Supabase dashboard (Free tier: 1 day retention). No centralized logging at MVP — for structured access: `docker compose logs --since 1h --no-color app | grep ERROR`. Resend mail delivery logs in Resend dashboard.
+- **Approval**: Human-only operations: VPS deletion, firewall rule changes, DNS changes (loxley.cards subdomains), Supabase project changes, SSH key rotation, password resets (manual UPDATE w `users` table z nowym BCrypt hashem). Agent may: deploy new image versions, restart containers, tail logs, query read-only DB statements, read Supabase metrics via API.
+- **Logs**: `ssh <vps> docker compose logs -f app` for Spring Boot logs. Supabase DB logs accessible via Supabase dashboard (Free tier: 1 day retention). No centralized logging at MVP — for structured access: `docker compose logs --since 1h --no-color app | grep ERROR`.
 
 ## Risk Register
 
@@ -107,7 +107,8 @@ The developer deployed Spring Boot on a Hetzner CX22 in Falkenstein, connected v
 | Wrong Supabase region (locked at creation) | Unknown unknowns | L | M | Choose `aws-eu-central-1` (Frankfurt) at project creation — ~10ms from Hetzner Falkenstein |
 | SSH key in GitHub Secrets compromised | Devil's advocate | L | H | Dedicated deploy SSH key with restricted shell (only `docker` and `docker compose` commands); rotate quarterly |
 | Single point of failure — VPS down = app down (DB stays up on Supabase) | Research finding | L | H | Hetzner Cloud 99.9% SLA; daily VPS snapshots (~20% cost, optional); acceptable for hobby project with 5-10 users |
-| Resend mail rate limit / delivery failure | Research finding | L | M | Free tier: 100 emails/day, 3000/mo — 30x headroom for MVP. Add domain verification (loxley.cards SPF/DKIM) for inbox deliverability of magic links |
+| User zapomni hasła, brak password reset (no email) | Auth pivot 2026-06-13 | M | L | Akceptowalne dla 5–10 znajomych. Manual recovery: Daniel UPDATE'uje `password_hash` w `users` table na BCrypt freshly wygenerowanego tymczasowego hasła (`htpasswd -bnBC 10 "" "<temp>"`), użytkownik loguje się i zmienia hasło. Jeśli baza userów urośnie → wracamy do mail-based reset (Resend/Mailgun) |
+| JWT secret leak → impersonation possible | Pivot consequence | L | H | `JWT_SECRET` w `.env` na VPS (NIE w git, NIE w GitHub Secrets debug logach). Sekret 32+ random bajtów. Rotation strategy: change `JWT_SECRET` w `.env`, restart app — wszystkie istniejące sesje unieważnione (akceptowalne, user re-loguje się) |
 
 ## Getting Started
 
@@ -115,10 +116,10 @@ The developer deployed Spring Boot on a Hetzner CX22 in Falkenstein, connected v
 2. **Configure Hetzner Cloud firewall**: `hcloud firewall create --name loxley-fw` then add inbound rules for ports 22 (SSH, optionally restricted to your IP), 80 (HTTP, for Certbot challenge), 443 (HTTPS). Apply: `hcloud firewall apply-to-resource loxley-fw --type server --server loxley-cards`. Do NOT open 8080 (Spring Boot stays behind nginx on 127.0.0.1).
 3. **DNS for `loxley.cards`**: Point `loxley.cards` (frontend) to Cloudflare (orange-cloud proxied) and `api.loxley.cards` (backend) A record to the VPS IPv4.
 4. **Provision Supabase project**: Create a new Supabase project in region `aws-eu-central-1` (Frankfurt). Note the connection string (Settings → Database → Connection string → URI). Use the transaction-mode pooler URL for Spring (port 6543, not 5432).
-5. **Set up Resend**: Create a Resend account, add `loxley.cards` as verified domain (DNS records: SPF, DKIM, DMARC). Generate API key. Store as `RESEND_API_KEY`.
+5. **Generate JWT secret**: `openssl rand -base64 48` — store as `JWT_SECRET` in VPS `.env`. Sekret signuje session JWTs; rotation = restart app + wszystkie sesje invalidated.
 6. **Install Docker + nginx on VPS**: SSH in, install Docker CE + Docker Compose plugin via the official Docker apt repository. Install nginx (`apt install nginx`). Pin Docker packages in apt (`apt-mark hold docker-ce docker-ce-cli`).
 7. **Set up TLS**: `certbot --nginx -d api.loxley.cards` for backend cert. Frontend cert handled automatically by Cloudflare Pages for `loxley.cards`.
-8. **Create `docker-compose.yml`** with single `app` service (Spring Boot), bind to `127.0.0.1:8080:8080`. Pass `DATABASE_URL`, `RESEND_API_KEY`, `MAGIC_LINK_JWT_SECRET` from `.env`.
+8. **Create `docker-compose.yml`** with single `app` service (Spring Boot), bind to `127.0.0.1:8080:8080`. Pass `DATABASE_URL`, `JWT_SECRET` from `.env`.
 9. **nginx config**: `api.loxley.cards` → `proxy_pass http://127.0.0.1:8080`. Reload nginx.
 10. **Set up CI/CD**: GitHub Actions workflow: `mvn package` → `docker build -t ghcr.io/<user>/loxley-cards:${{ github.sha }}` → `docker push` → SSH to VPS → `docker pull` + `docker compose up -d` → health check via `curl https://api.loxley.cards/actuator/health/db`. Store SSH key, VPS IP, GHCR token as GitHub Secrets.
 11. **Frontend on Cloudflare Pages**: Connect GitHub repo (`frontend/` directory), build command `npm run build`, output directory `dist`. Set `VITE_API_URL=https://api.loxley.cards` as build env var. Auto-deploy on push to `main`.

@@ -20,6 +20,12 @@ public class User {
     private UUID id;
 
     @Column(nullable = false, unique = true)
+    private String username;
+
+    @Column(name = "password_hash", nullable = false)
+    private String passwordHash;
+
+    @Column(nullable = true)
     private String email;
 
     @Column(nullable = false)
@@ -34,8 +40,9 @@ public class User {
     protected User() {
     }
 
-    public User(String email) {
-        this.email = email;
+    public User(String username, String passwordHash) {
+        this.username = username;
+        this.passwordHash = passwordHash;
     }
 
     @PrePersist
@@ -54,8 +61,20 @@ public class User {
         return id;
     }
 
+    public String getUsername() {
+        return username;
+    }
+
+    public String getPasswordHash() {
+        return passwordHash;
+    }
+
     public String getEmail() {
         return email;
+    }
+
+    public void setEmail(String email) {
+        this.email = email;
     }
 
     public int getHighestUnlockedStage() {

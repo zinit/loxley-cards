@@ -24,18 +24,40 @@ class UserRepositoryTests {
 
     @Test
     void saveGeneratesUuid() {
-        var user = userRepository.save(new User("robin@sherwood.forest"));
+        var user = userRepository.save(new User("robin", "$2a$10$dummyhash"));
 
         assertThat(user.getId()).isNotNull();
-        assertThat(user.getEmail()).isEqualTo("robin@sherwood.forest");
+        assertThat(user.getUsername()).isEqualTo("robin");
+        assertThat(user.getPasswordHash()).isEqualTo("$2a$10$dummyhash");
         assertThat(user.getHighestUnlockedStage()).isEqualTo(1);
         assertThat(user.getCreatedAt()).isNotNull();
         assertThat(user.getUpdatedAt()).isNotNull();
     }
 
     @Test
+    void findByUsernameReturnsUser() {
+        var saved = userRepository.save(new User("marian", "$2a$10$dummyhash"));
+        entityManager.flush();
+        entityManager.clear();
+
+        var found = userRepository.findByUsername("marian");
+
+        assertThat(found).isPresent();
+        assertThat(found.get().getId()).isEqualTo(saved.getId());
+    }
+
+    @Test
+    void findByUsernameReturnsEmptyForUnknown() {
+        var found = userRepository.findByUsername("nobody");
+
+        assertThat(found).isEmpty();
+    }
+
+    @Test
     void findByEmailReturnsUser() {
-        var saved = userRepository.save(new User("marian@sherwood.forest"));
+        var user = new User("marian2", "$2a$10$dummyhash");
+        user.setEmail("marian@sherwood.forest");
+        var saved = userRepository.save(user);
         entityManager.flush();
         entityManager.clear();
 
@@ -46,15 +68,8 @@ class UserRepositoryTests {
     }
 
     @Test
-    void findByEmailReturnsEmptyForUnknown() {
-        var found = userRepository.findByEmail("nobody@sherwood.forest");
-
-        assertThat(found).isEmpty();
-    }
-
-    @Test
     void updateHighestUnlockedStage() {
-        var user = userRepository.save(new User("littlejohn@sherwood.forest"));
+        var user = userRepository.save(new User("littlejohn", "$2a$10$dummyhash"));
         entityManager.flush();
         entityManager.clear();
 
@@ -69,12 +84,12 @@ class UserRepositoryTests {
     }
 
     @Test
-    void uniqueEmailConstraint() {
-        userRepository.save(new User("friar@sherwood.forest"));
+    void uniqueUsernameConstraint() {
+        userRepository.save(new User("friar_tuck", "$2a$10$dummyhash"));
         entityManager.flush();
 
         assertThatThrownBy(() -> {
-            userRepository.save(new User("friar@sherwood.forest"));
+            userRepository.save(new User("friar_tuck", "$2a$10$anotherhash"));
             entityManager.flush();
         }).isInstanceOf(Exception.class);
     }

@@ -3,7 +3,7 @@ project: loxley-cards
 iteration: 1
 status: approved
 approved_at: 2026-05-24
-goal: hello-world deploy — verify pipeline end-to-end before game engine / magic-link / REST API
+goal: hello-world deploy — verify pipeline end-to-end before game engine / password auth / REST API
 target_backend: https://api.loxley.cards
 target_frontend: https://loxley.cards
 sources:
@@ -15,7 +15,7 @@ sources:
 
 ## 1. Context
 
-Celem tej iteracji jest **zweryfikowanie pipeline'u end-to-end od commitu do HTTPS** zanim zainwestujemy czas w game engine, magic-link i REST API. Po wykonaniu planu push do `main` powinien automatycznie zbudować obraz Spring Boot, opublikować go w GHCR, wdrożyć na Hetzner VPS za nginx + Let's Encrypt, oraz odświeżyć frontend na Cloudflare Pages — a w przeglądarce na `https://loxley.cards` użytkownik zobaczy status `UP` z `https://api.loxley.cards/actuator/health`. Wszystkie zewnętrzne usługi (Supabase JDBC, Resend, Spring Security, JPA, Flyway) są celowo odroczone do iter. 2 — uruchamianie ich razem z pierwszym deployem znacznie rozszerza powierzchnię błędu, a większość ryzyk z risk register (DB pool sizing, pause-after-inactivity, cert renewal, magic-link UX) najlepiej testować na działającym pipeline, a nie razem z nim. Spring Security jest świadomie nie dodany — bez konfiguracji blokuje wszystko HTTP Basic.
+Celem tej iteracji jest **zweryfikowanie pipeline'u end-to-end od commitu do HTTPS** zanim zainwestujemy czas w game engine, password auth i REST API. Po wykonaniu planu push do `main` powinien automatycznie zbudować obraz Spring Boot, opublikować go w GHCR, wdrożyć na Hetzner VPS za nginx + Let's Encrypt, oraz odświeżyć frontend na Cloudflare Pages — a w przeglądarce na `https://loxley.cards` użytkownik zobaczy status `UP` z `https://api.loxley.cards/actuator/health`. Wszystkie zewnętrzne usługi (Supabase JDBC, Spring Security + JWT, JPA, Flyway) są celowo odroczone do iter. 2 — uruchamianie ich razem z pierwszym deployem znacznie rozszerza powierzchnię błędu, a większość ryzyk z risk register (DB pool sizing, pause-after-inactivity, cert renewal, CORS/cookie scope) najlepiej testować na działającym pipeline, a nie razem z nim. Spring Security jest świadomie nie dodany — bez konfiguracji blokuje wszystko HTTP Basic.
 
 ---
 
@@ -27,7 +27,7 @@ Celem tej iteracji jest **zweryfikowanie pipeline'u end-to-end od commitu do HTT
 2. **GitHub Personal Access Token (classic) dla GHCR** — https://github.com/settings/tokens → "Generate new token (classic)" → nazwa `loxley-cards-ghcr`, expiration 1 year, scopes: `write:packages` + `read:packages` + `delete:packages`. Zapisz token w password manager (już go nigdy nie zobaczysz). Token będzie potrzebny do `docker login ghcr.io` z VPS.
 3. **Cloudflare** — masz już konto skoro DNS jest w Cloudflare. Zweryfikuj że domena `loxley.cards` jest na liście stref.
 4. **(Równolegle, dla iter. 2 — niech dojrzewa)** **Supabase**: https://supabase.com/dashboard → New project, region **`aws-eu-central-1` (Frankfurt)**, nazwa `loxley-cards`, hasło DB w password manager. Region jest LOCKED przy tworzeniu — wybierz dobrze. Nic z tego nie używamy w iter. 1.
-5. **(Równolegle, dla iter. 2)** **Resend**: https://resend.com/signup → dodaj domenę `loxley.cards` → Resend pokaże SPF/DKIM/DMARC TXT records → dodaj je w Cloudflare DNS (proxy = DNS only/gray). Weryfikacja zajmuje ~10 min do paru godzin. Nic z tego nie używamy w iter. 1.
+5. **(Iter. 2 nie potrzebuje email-providera)** Auth w F-03 to username + hasło (BCrypt + JWT, lokalnie w `users` table) — żadnego maila nie wysyłamy. Brak Resend / Mailgun / SMTP w MVP. Świadoma decyzja udokumentowana w `context/foundation/prd.md` (Access Control) i `context/foundation/infrastructure.md` (risk register).
 
 ### 2B. Command: brakujące CLI (user, lokalnie)
 
@@ -285,7 +285,7 @@ cd /opt/loxley-cards
 
 **Stwórz `/opt/loxley-cards/.env`** (jako user `deploy`, mode 600):
 ```bash
-# Iter. 1 — minimalny .env. Iter. 2 doda DATABASE_URL, RESEND_API_KEY, MAGIC_LINK_JWT_SECRET
+# Iter. 1 — minimalny .env. Iter. 2 doda DATABASE_URL, JWT_SECRET
 IMAGE_TAG=latest
 SPRING_PROFILES_ACTIVE=prod
 ```
@@ -706,8 +706,8 @@ git push origin main
 - `spring.datasource.url` / `DATABASE_URL` env wiring w `application-prod.properties`
 - HikariCP pool size tuning (`maximum-pool-size=10` dla Supabase Free pgbouncer)
 - Flyway migrations module / `db/migration/V1__init.sql`
-- `spring-boot-starter-security` + magic-link auth flow (token gen, store, validate, expiry)
-- Resend HTTP client integration (POST `/emails` z magic-link URL)
+- `spring-boot-starter-security` + `spring-boot-security` autoconfig (SB4 per-tech split, lesson z F-02) + BCrypt password encoder + JWT signing/verification + `/auth/register|login|logout` REST endpointy (F-03)
+- `JWT_SECRET` env var (32+ random bytes, `openssl rand -base64 48`) + V3 Flyway migration na `users` table (`username`/`password_hash` columns + `email` nullable)
 - Custom `/actuator/health/db` indicator który robi `SELECT 1` (na nim oprzeć UptimeRobot w iter. 2)
 - Pierwszy REST controller (np. `GET /api/v1/me` zwracający 401 bez tokena)
 
@@ -724,11 +724,11 @@ git push origin main
 **Frontend:**
 - Routing (React Router) — single page w iter. 1
 - State management
-- Magic-link login page / token landing page
+- Login / register page (username + hasło) + logout flow
 - API client setup (axios / tanstack-query)
 - Wszystkie game UI screens
 
-**Komentarz strategiczny do "równolegle":** Etap 2A.4 (Supabase project creation w `aws-eu-central-1`) i 2A.5 (Resend domain verification) **rób już teraz manualnie podczas Etap 1-3**. Powód: (a) Supabase region jest LOCKED, lepiej kliknąć raz teraz świadomie niż w trakcie iter. 2, (b) Resend DNS propagation (SPF/DKIM/DMARC) zajmuje godziny i blokuje rozwój w iter. 2. Niech dojrzewają w tle. Connection string z Supabase trzymaj w password manager — w iter. 1 NIE wstawiamy go nigdzie w kodzie ani w `.env` na VPS.
+**Komentarz strategiczny do "równolegle":** Etap 2A.4 (Supabase project creation w `aws-eu-central-1`) **rób już teraz manualnie podczas Etap 1-3**. Powód: Supabase region jest LOCKED, lepiej kliknąć raz teraz świadomie niż w trakcie iter. 2. Niech dojrzewa w tle. Connection string z Supabase trzymaj w password manager — w iter. 1 NIE wstawiamy go nigdzie w kodzie ani w `.env` na VPS. (Resend / email-provider odpadł po pivocie magic-link → username/password w 2026-06-13.)
 
 **Limit czasowy:** plan jest realizowalny w 2 wieczory po godzinach: wieczór 1 = Etap 1-3 (VPS up, DNS, cert, ręczny smoke deploy z 5.7), wieczór 2 = Etap 4-6 (CI/CD, frontend, weryfikacja). Jeśli coś się rozjedzie (np. DNS propaguje wolno), Etap 6 może zostać do trzeciego wieczoru — ale rzadko.
 

@@ -13,7 +13,7 @@ updated: 2026-05-24
 
 ## Vision & Problem Statement
 
-Webowa karcianka inspirowana mechaniką Gwinta z Witchera 3 — standalone, dostępna w 1 klik (magic link na email), partia vs bot trwająca ~15 minut, z kampanią i progresją.
+Webowa karcianka inspirowana mechaniką Gwinta z Witchera 3 — standalone, z prostym logowaniem (username + hasło, bez weryfikacji emaila), partia vs bot trwająca ~15 minut, z kampanią i progresją.
 
 **Problem:** Gwint jest zablokowany wewnątrz Witchera 3 — żeby zagrać, trzeba odpalić ogromną grę RPG, co zajmuje kilkadziesiąt minut overheadu. Nie istnieje lekka, webowa wersja tej mechaniki (rzędy / pogoda / best-of-3). Alternatywne karcianki online nie oferują tych mechanik.
 
@@ -27,7 +27,7 @@ Webowa karcianka inspirowana mechaniką Gwinta z Witchera 3 — standalone, dost
 
 ## Access Control
 
-**Auth method:** Magic link na email (passwordless). Użytkownik podaje email, dostaje link, klik = zalogowany. Bez hasła, bez OAuth.
+**Auth method:** Username + hasło. Pierwsza wizyta = rejestracja (username + hasło), kolejne = login. Hasło hashowane BCryptem, sesja po zalogowaniu w JWT (cookie HTTPOnly). Bez OAuth, bez magic-linka, bez password reset (brak emaila = jak userek zapomni hasła, kontakt manualny i reset hash w DB).
 
 **Role model:** Flat — wszyscy użytkownicy równi, jeden typ konta, brak podziału na role. Najprostszy model wystarczający dla MVP.
 
@@ -35,7 +35,7 @@ Webowa karcianka inspirowana mechaniką Gwinta z Witchera 3 — standalone, dost
 
 ### Primary
 
-Użytkownik otwiera URL, loguje się magic linkiem, wybiera etap kampanii, rozgrywa pełną partię vs bot (best-of-3, mechanika rzędów), widzi wynik i progres jest zapisany — następny etap odblokowany.
+Użytkownik otwiera URL, loguje się (username + hasło), wybiera etap kampanii, rozgrywa pełną partię vs bot (best-of-3, mechanika rzędów), widzi wynik i progres jest zapisany — następny etap odblokowany.
 
 ### Secondary
 
@@ -47,8 +47,8 @@ Użytkownik widzi swój własny postęp w kampanii (osobisty profil z listą uko
 
 ## Functional Requirements
 
-- FR-001: Gracz może zalogować się magic linkiem (podaje email, klika link ze skrzynki). Priority: must-have
-  > Socrates: Brak kontr-argumentu; magic link OK dla tej skali i persony.
+- FR-001: Gracz może założyć konto (username + hasło) i zalogować się (username + hasło). Priority: must-have
+  > Socrates: Świadoma decyzja w F-03 setup — magic-link wymagałby Resend + verified domeny (Daniel ma Resend pod inną domeną na free planie). Username + hasło = zero zależności od emaila, kosztem braku password reset (akceptowalne dla 5–10 znajomych; manual cleanup w DB jak ktoś zapomni hasła).
 - FR-002: Gracz może przeglądać kampanię (10 etapów, liniowe odblokowanie). Priority: must-have
   > Socrates: Brak kontr-argumentu; 10 liniowych etapów wystarczy na MVP.
 - FR-003: Gracz może rozpocząć partię na odblokowanym etapie. Priority: must-have
@@ -80,11 +80,11 @@ Użytkownik widzi swój własny postęp w kampanii (osobisty profil z listą uko
 **When:** Klika "Graj" przy etapie, rozgrywa karty w rundach (best-of-3), pasuje lub gra do końca każdej rundy
 **Then:** Widzi wynik partii; jeśli wygrał — następny etap odblokowany; progres zapisany trwale
 
-### US-02: Logowanie magic linkiem
+### US-02: Logowanie username + hasłem
 
 **Given:** Gracz otwiera URL i nie jest zalogowany
-**When:** Podaje email, klika "Zagraj", przechodzi do skrzynki i klika magic link
-**Then:** Wraca do appki zalogowany, ląduje na ekranie kampanii ze swoim progresem
+**When:** Podaje username + hasło (rejestracja przy pierwszym wejściu, login przy kolejnych) i klika "Zagraj"
+**Then:** Ląduje na ekranie kampanii ze swoim progresem; sesja trzymana w cookie/JWT
 
 ## Business Logic
 
@@ -99,7 +99,7 @@ Gra wymusza taktyczne zarządzanie ograniczoną ręką kart w 3 rundach (best-of
 ## Non-Functional Requirements
 
 - Szybkość bota: odpowiedź bota na ruch gracza < 2 sekundy. Bot jest deterministyczny (scoring-based), więc spełnienie jest trywialne.
-- Prywatność: jedyną daną osobową jest email do logowania. Zero tracking, zero analityki, zero cookies marketingowych w MVP.
+- Prywatność: brak obowiązkowo zbieranych danych osobowych — login to username (cokolwiek user wpisze), hasło hashowane (BCrypt). Pole `email` w encji `User` jest opcjonalne (nullable; unique constraint zostaje, ale Postgres traktuje wiele wierszy z `NULL` jako distinct, więc anonymous userzy bez emaila współistnieją bez kolizji — decyzja F-03 plan-review 2026-06-13 dla H2 portability) — zachowane na przyszłość (potencjalny password reset / notyfikacje), nieużywane w MVP. Zero tracking, zero analityki, zero cookies marketingowych w MVP.
 - Target platform: desktop/laptop (duży ekran). Mobile jest świadomym non-goal — 6 rzędów planszy + ręka kart + UI dowódcy/grave/deck wymaga dużego ekranu dla czytelności.
 
 ## Non-Goals
