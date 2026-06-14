@@ -1,0 +1,20 @@
+# Build outputs
+**/target/
+
+# IDE
+.idea/
+*.iml
+.vscode/
+
+# Local env (never copy secrets into image)
+.env
+.env.*
+!.env.example
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Git
+.git/
+.gitignore
