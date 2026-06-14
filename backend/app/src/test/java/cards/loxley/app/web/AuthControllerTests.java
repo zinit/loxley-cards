@@ -1,6 +1,7 @@
 package cards.loxley.app.web;
 
 import static org.hamcrest.Matchers.*;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
@@ -10,6 +11,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
+import jakarta.servlet.http.Cookie;
 import org.springframework.transaction.annotation.Transactional;
 
 @SpringBootTest
@@ -104,5 +106,28 @@ class AuthControllerTests {
         mockMvc.perform(post("/auth/logout"))
                 .andExpect(status().isOk())
                 .andExpect(header().string("Set-Cookie", containsString("Max-Age=0")));
+    }
+
+    @Test
+    void me_withValidCookie_returns200WithUsername() throws Exception {
+        var registerResult = mockMvc.perform(post("/auth/register")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"username\":\"alan_dale\",\"password\":\"sherwood1\"}"))
+                .andExpect(status().isCreated())
+                .andReturn();
+
+        String setCookie = registerResult.getResponse().getHeader("Set-Cookie");
+        String jwtValue = setCookie.substring(setCookie.indexOf("jwt=") + 4, setCookie.indexOf(";"));
+
+        mockMvc.perform(get("/auth/me")
+                        .cookie(new Cookie("jwt", jwtValue)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.username").value("alan_dale"));
+    }
+
+    @Test
+    void me_withoutCookie_returns401() throws Exception {
+        mockMvc.perform(get("/auth/me"))
+                .andExpect(status().isUnauthorized());
     }
 }

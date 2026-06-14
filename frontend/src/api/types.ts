@@ -1,3 +1,7 @@
+export interface AuthUser {
+  username: string
+}
+
 export interface LastMoveView {
   player: string
   kind: string

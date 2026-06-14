@@ -1,5 +1,6 @@
-import { useRef } from 'react'
+import { useCallback, useRef } from 'react'
 import { useNavigate } from 'react-router'
+import { useAuth } from '../contexts/AuthContext'
 import { useMapTransform } from '../hooks/useMapTransform'
 import { CAMPAIGN_STAGES } from '../data/campaignStages'
 import { getHighestUnlocked } from '../utils/campaignProgress'
@@ -12,7 +13,13 @@ function CampaignMap() {
   const containerRef = useRef<HTMLDivElement>(null)
   const transform = useMapTransform(containerRef)
   const navigate = useNavigate()
+  const { user, logout } = useAuth()
   const highestUnlocked = getHighestUnlocked()
+
+  const handleLogout = useCallback(async () => {
+    await logout()
+    navigate('/login', { replace: true })
+  }, [logout, navigate])
 
   const markerSize = BASE_MARKER_SIZE * transform.scale
 
@@ -21,6 +28,13 @@ function CampaignMap() {
       ref={containerRef}
       className="relative w-screen h-screen overflow-hidden bg-black"
     >
+      <div className="campaign-auth-chrome">
+        <span className="campaign-username">{user?.username}</span>
+        <button type="button" className="campaign-logout" onClick={handleLogout}>
+          Logout
+        </button>
+      </div>
+
       <img
         src={mapImage}
         alt="Sherwood campaign map"
