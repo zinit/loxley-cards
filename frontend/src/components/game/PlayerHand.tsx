@@ -30,6 +30,7 @@ function PlayerHand({
         {hand.map((card) => (
           <Card
             key={card.instanceId}
+            testId="hand-card"
             cardId={card.cardId}
             name={card.name}
             currentStrength={card.currentStrength}
@@ -44,12 +45,12 @@ function PlayerHand({
 
       <div className="game-action-buttons">
         {canPass && (
-          <button type="button" className="action-btn action-btn-pass" onClick={onPass}>
+          <button type="button" className="action-btn action-btn-pass" onClick={onPass} data-testid="pass-button">
             Pass
           </button>
         )}
         {canLeader && (
-          <button type="button" className="action-btn action-btn-leader" onClick={onLeader}>
+          <button type="button" className="action-btn action-btn-leader" onClick={onLeader} data-testid="leader-button">
             Use Leader
           </button>
         )}

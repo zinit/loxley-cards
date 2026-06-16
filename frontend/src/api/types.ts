@@ -1,5 +1,6 @@
 export interface AuthUser {
   username: string
+  highestUnlockedStage: number
 }
 
 export interface LastMoveView {
@@ -22,6 +23,7 @@ export interface GameStateView {
   legalMoves: MoveView[]
   yourLastMove: LastMoveView | null
   opponentLastMove: LastMoveView | null
+  newHighestUnlockedStage: number | null
 }
 
 export interface PlayerView {

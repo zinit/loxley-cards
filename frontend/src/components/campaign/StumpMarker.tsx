@@ -31,6 +31,8 @@ function StumpMarker({
       }}
       disabled={status === 'locked'}
       aria-label={`Stage ${number}`}
+      data-testid={`stage-${number}`}
+      data-status={status}
     >
       {status === 'active' && (
         <span className="stump-sparkle-extra" aria-hidden="true" />

@@ -61,7 +61,7 @@ public class DevTestController {
         seedForcedCards(state.playerState(Player.P1));
         String gameId = sessionStore.create(state, stage);
         List<Move> legalMoves = generator.legalMoves(state, Player.P1);
-        return mapper.toView(state, gameId, Player.P1, legalMoves, null, null);
+        return mapper.toView(state, gameId, Player.P1, legalMoves, null, null, null);
     }
 
     private void seedForcedCards(PlayerState ps) {

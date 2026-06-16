@@ -37,6 +37,7 @@ function BoardRow({
     <div
       className={rowClasses}
       onClick={() => isValidTarget && onRowClick()}
+      data-testid={`target-row-${rowId}`}
     >
       <div className="row-label">{rowId}</div>
       <div className="row-cards">

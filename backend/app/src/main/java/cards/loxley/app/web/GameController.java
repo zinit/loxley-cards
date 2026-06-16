@@ -15,6 +15,10 @@ import cards.loxley.game.engine.move.*;
 import cards.loxley.game.engine.opponent.OpponentProfile;
 import cards.loxley.game.engine.opponent.OpponentProfileRegistry;
 import cards.loxley.game.domain.state.GameStateFactory;
+import cards.loxley.db.User;
+import cards.loxley.db.UserRepository;
+import org.springframework.security.authentication.AnonymousAuthenticationToken;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -31,6 +35,7 @@ public class GameController {
     private final TurnOrchestrator orchestrator;
     private final GameStateMapper mapper;
     private final GameSessionStore sessionStore;
+    private final UserRepository userRepository;
 
     public GameController(GameStateFactory factory,
                           CampaignStageRegistry stageRegistry,
@@ -39,7 +44,8 @@ public class GameController {
                           MoveGenerator generator,
                           TurnOrchestrator orchestrator,
                           GameStateMapper mapper,
-                          GameSessionStore sessionStore) {
+                          GameSessionStore sessionStore,
+                          UserRepository userRepository) {
         this.factory = factory;
         this.stageRegistry = stageRegistry;
         this.profileRegistry = profileRegistry;
@@ -48,6 +54,7 @@ public class GameController {
         this.orchestrator = orchestrator;
         this.mapper = mapper;
         this.sessionStore = sessionStore;
+        this.userRepository = userRepository;
     }
 
     @PostMapping
@@ -55,13 +62,19 @@ public class GameController {
         CampaignStage stage = stageRegistry.findByNumber(request.stageNumber())
                 .orElseThrow(() -> new IllegalArgumentException(
                         "Unknown stage: " + request.stageNumber()));
+
+        User user = resolveAuthenticatedUser();
+        if (user != null && request.stageNumber() > user.getHighestUnlockedStage()) {
+            throw new IllegalArgumentException("Stage " + request.stageNumber() + " is locked");
+        }
+
         GameState state = factory.newCampaignGame(stage);
         String gameId = sessionStore.create(state, stage);
 
         synchronized (sessionStore.lock(gameId)) {
             Move lastBotMove = driveBotMoves(state, gameId);
             List<Move> legalMoves = generator.legalMoves(state, Player.P1);
-            return mapper.toView(state, gameId, Player.P1, legalMoves, null, lastBotMove);
+            return mapper.toView(state, gameId, Player.P1, legalMoves, null, lastBotMove, null);
         }
     }
 
@@ -90,12 +103,33 @@ public class GameController {
 
             Move lastBotMove = driveBotMoves(state, gameId);
 
+            Integer newHighestUnlockedStage = null;
+            if (state.matchEnded() && state.matchWinner().isPresent()
+                    && state.matchWinner().get() == Player.P1) {
+                User user = resolveAuthenticatedUser();
+                if (user != null) {
+                    CampaignStage stage = sessionStore.findStageOrThrow(gameId);
+                    int newStage = Math.min(stage.stageNumber() + 1, 10);
+                    if (newStage > user.getHighestUnlockedStage()) {
+                        user.setHighestUnlockedStage(newStage);
+                        userRepository.save(user);
+                    }
+                    newHighestUnlockedStage = Math.max(user.getHighestUnlockedStage(), newStage);
+                }
+            }
+
             List<Move> legalMoves = state.matchEnded()
                     ? List.of()
                     : generator.legalMoves(state, Player.P1);
             return mapper.toView(state, gameId, Player.P1, legalMoves,
-                    playerMove, lastBotMove);
+                    playerMove, lastBotMove, newHighestUnlockedStage);
         }
+    }
+
+    private User resolveAuthenticatedUser() {
+        var auth = SecurityContextHolder.getContext().getAuthentication();
+        if (auth == null || auth instanceof AnonymousAuthenticationToken) return null;
+        return userRepository.findByUsername(auth.getName()).orElse(null);
     }
 
     private Move driveBotMoves(GameState state, String gameId) {

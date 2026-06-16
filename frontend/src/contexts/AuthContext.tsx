@@ -9,6 +9,7 @@ interface AuthContextValue {
   login: (username: string, password: string) => Promise<void>
   register: (username: string, password: string) => Promise<void>
   logout: () => Promise<void>
+  updateHighestUnlockedStage: (stage: number) => void
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null)
@@ -38,9 +39,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(null)
   }, [])
 
+  const updateHighestUnlockedStage = useCallback((stage: number) => {
+    setUser((prev) => prev ? { ...prev, highestUnlockedStage: stage } : prev)
+  }, [])
+
   const value = useMemo(
-    () => ({ user, loading, login, register, logout }),
-    [user, loading, login, register, logout],
+    () => ({ user, loading, login, register, logout, updateHighestUnlockedStage }),
+    [user, loading, login, register, logout, updateHighestUnlockedStage],
   )
 
   return (

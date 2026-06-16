@@ -14,6 +14,7 @@ public record GameStateView(
         List<RoundResultView> roundHistory,
         List<MoveView> legalMoves,
         LastMoveView yourLastMove,
-        LastMoveView opponentLastMove
+        LastMoveView opponentLastMove,
+        Integer newHighestUnlockedStage
 ) {
 }

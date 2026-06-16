@@ -53,7 +53,11 @@ public class AuthController {
         if (authentication == null || authentication instanceof AnonymousAuthenticationToken) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
-        return ResponseEntity.ok(new AuthResponse(authentication.getName()));
+        var user = userRepository.findByUsername(authentication.getName()).orElse(null);
+        if (user == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+        return ResponseEntity.ok(new AuthResponse(user.getUsername(), user.getHighestUnlockedStage()));
     }
 
     @PostMapping("/register")
@@ -70,7 +74,7 @@ public class AuthController {
 
         addJwtCookie(response, tokenProvider.generateToken(request.username()));
         return ResponseEntity.status(HttpStatus.CREATED)
-                .body(new AuthResponse(request.username()));
+                .body(new AuthResponse(request.username(), 1));
     }
 
     @PostMapping("/login")
@@ -84,7 +88,7 @@ public class AuthController {
         }
 
         addJwtCookie(response, tokenProvider.generateToken(request.username()));
-        return ResponseEntity.ok(new AuthResponse(request.username()));
+        return ResponseEntity.ok(new AuthResponse(user.getUsername(), user.getHighestUnlockedStage()));
     }
 
     @PostMapping("/logout")

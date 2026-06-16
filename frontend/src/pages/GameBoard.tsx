@@ -9,7 +9,7 @@ import PlayerHand from '../components/game/PlayerHand'
 import RoundOverlay from '../components/game/RoundOverlay'
 import MatchEndScreen from '../components/game/MatchEndScreen'
 import MoveToast from '../components/game/MoveToast'
-import { unlockStage } from '../utils/campaignProgress'
+import { useAuth } from '../contexts/AuthContext'
 import tableStumpImage from '../assets/markers/table-stump.webp'
 
 function GameBoardInner() {
@@ -17,6 +17,7 @@ function GameBoardInner() {
   const [searchParams] = useSearchParams()
   const navigate = useNavigate()
   const { state, dispatch } = useGame()
+  const { updateHighestUnlockedStage } = useAuth()
   const { gameState, selectedCardInstanceId, validTargets, targetingMode, phase, error } = state
 
   const [stumpIn, setStumpIn] = useState(false)
@@ -56,11 +57,10 @@ function GameBoardInner() {
   // Unlock next stage on match victory
   useEffect(() => {
     if (phase !== 'match-ended' || !gameState?.matchEnded) return
-    if (gameState.matchWinner === 'P1') {
-      const stageNumber = parseInt(stageId ?? '1', 10)
-      unlockStage(stageNumber + 1)
+    if (gameState.matchWinner === 'P1' && gameState.newHighestUnlockedStage != null) {
+      updateHighestUnlockedStage(gameState.newHighestUnlockedStage)
     }
-  }, [phase, gameState, stageId])
+  }, [phase, gameState, updateHighestUnlockedStage])
 
   const handleBack = useCallback(() => {
     exitTimers.current.forEach(clearTimeout)

@@ -13,6 +13,7 @@ interface CardProps {
   onClick?: () => void
   selected?: boolean
   isValidTarget?: boolean
+  testId?: string
 }
 
 const ROW_ICONS: Record<string, string> = {
@@ -31,6 +32,7 @@ function Card({
   onClick,
   selected = false,
   isValidTarget = false,
+  testId,
 }: CardProps) {
   const width = size * 0.714
   const image = getCardImage(cardId)
@@ -55,6 +57,7 @@ function Card({
       className={cardClasses}
       style={{ width: `${width}px`, height: `${size}px` }}
       onClick={onClick}
+      data-testid={testId}
     >
       <img
         src={image}

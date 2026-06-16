@@ -32,12 +32,13 @@ public class GameStateMapper {
 
     public GameStateView toView(GameState state, String gameId, Player perspective,
                                 List<Move> legalMoves) {
-        return toView(state, gameId, perspective, legalMoves, null, null);
+        return toView(state, gameId, perspective, legalMoves, null, null, null);
     }
 
     public GameStateView toView(GameState state, String gameId, Player perspective,
                                 List<Move> legalMoves,
-                                Move playerMove, Move botMove) {
+                                Move playerMove, Move botMove,
+                                Integer newHighestUnlockedStage) {
         Player opponent = perspective.opponent();
         return new GameStateView(
                 gameId,
@@ -51,7 +52,8 @@ public class GameStateMapper {
                 state.roundHistory().stream().map(this::toRoundResultView).toList(),
                 legalMoves.stream().map(m -> toMoveView(m, state)).toList(),
                 toLastMoveView(playerMove, state, "you"),
-                toLastMoveView(botMove, state, "opponent")
+                toLastMoveView(botMove, state, "opponent"),
+                newHighestUnlockedStage
         );
     }
 

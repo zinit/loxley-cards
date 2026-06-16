@@ -25,7 +25,7 @@ function MatchEndScreen({
   const titleText = victory ? 'VICTORY' : draw ? 'DRAW' : 'DEFEAT'
 
   return (
-    <div className="match-end-overlay">
+    <div className="match-end-overlay" data-testid="match-end-screen" data-result={victory ? 'victory' : draw ? 'draw' : 'defeat'}>
       <div className="match-end-card">
         <div className={`match-end-title ${titleClass}`}>
           {titleText}
@@ -50,7 +50,7 @@ function MatchEndScreen({
           <button type="button" className="action-btn action-btn-leader" onClick={onPlayAgain}>
             Play Again
           </button>
-          <button type="button" className="action-btn action-btn-pass" onClick={onBackToCampaign}>
+          <button type="button" className="action-btn action-btn-pass" onClick={onBackToCampaign} data-testid="back-to-campaign">
             Back to Campaign
           </button>
         </div>

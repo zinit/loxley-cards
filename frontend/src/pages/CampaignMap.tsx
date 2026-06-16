@@ -3,7 +3,6 @@ import { useNavigate } from 'react-router'
 import { useAuth } from '../contexts/AuthContext'
 import { useMapTransform } from '../hooks/useMapTransform'
 import { CAMPAIGN_STAGES } from '../data/campaignStages'
-import { getHighestUnlocked } from '../utils/campaignProgress'
 import StumpMarker from '../components/campaign/StumpMarker'
 import mapImage from '../assets/sherwood-map-4k.webp'
 
@@ -14,7 +13,7 @@ function CampaignMap() {
   const transform = useMapTransform(containerRef)
   const navigate = useNavigate()
   const { user, logout } = useAuth()
-  const highestUnlocked = getHighestUnlocked()
+  const highestUnlocked = user?.highestUnlockedStage ?? 1
 
   const handleLogout = useCallback(async () => {
     await logout()
