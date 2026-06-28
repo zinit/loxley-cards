@@ -1,0 +1,43 @@
+name: AI Code Review
+
+on:
+  pull_request:
+    branches: [main]
+
+concurrency:
+  group: ai-review-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  ai-review:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - name: Compute diff
+        run: git diff origin/main...HEAD > /tmp/pr_diff.txt
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '22'
+
+      - name: Install review script deps
+        working-directory: .github/scripts
+        run: npm ci
+
+      - name: Run AI review
+        continue-on-error: true
+        env:
+          PR_DIFF_FILE: /tmp/pr_diff.txt
+          PR_TITLE: ${{ github.event.pull_request.title }}
+          PR_BODY: ${{ github.event.pull_request.body }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: node .github/scripts/review.js

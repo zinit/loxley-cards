@@ -1,128 +1,115 @@
 ---
 project: loxley-cards
-context_type: greenfield
+context_type: brownfield
+created: 2026-06-28
+updated: 2026-06-28
 checkpoint:
   current_phase: 8
   phases_completed: [1, 2, 3, 4, 5, 6, 7]
-  frs_drafted: 12
+  gray_areas_resolved:
+    - topic: "kategoria zmiany"
+      decision: "nowy moduł CI (ai-review.yml obok ci.yml), zero ingerencji w istniejący pipeline"
+    - topic: "wgląd"
+      decision: "brak separacji ról (confirmation bias) + brak artefaktu na PR (niewidoczny review)"
+    - topic: "persona"
+      decision: "Daniel jako solo dev"
+  frs_drafted: 5
   quality_check_status: accepted
-updated: 2026-05-24
 ---
 
-# Shape Notes: loxley-cards
+# Shape Notes: f-06-ai-code-review-pipeline
 
-## Vision & Problem Statement
+## Current System
 
-Webowa karcianka inspirowana mechaniką Gwinta z Witchera 3 — standalone, z prostym logowaniem (username + hasło, bez weryfikacji emaila), partia vs bot trwająca ~15 minut, z kampanią i progresją.
+loxley-cards — webowa karcianka inspirowana Gwintem (Spring Boot 4 / Java 21 backend, React/TS frontend), MVP funkcjonalnie kompletny (auth + kampania + grywalna partia vs bot), deployed na loxley.cards. CI w `.github/workflows/ci.yml` (backend `mvnw verify` + frontend `npm run build`) shipped w F-05 (2026-06-17) — uruchamiany na każdy push/PR do main. Zero AI w pipeline. Repo publiczne na GitHubie.
 
-**Problem:** Gwint jest zablokowany wewnątrz Witchera 3 — żeby zagrać, trzeba odpalić ogromną grę RPG, co zajmuje kilkadziesiąt minut overheadu. Nie istnieje lekka, webowa wersja tej mechaniki (rzędy / pogoda / best-of-3). Alternatywne karcianki online nie oferują tych mechanik.
+## Problem Statement & Motivation
 
-**Insight:** Niche jest za mały dla dużych studiów (CD Projekt nie zbuduje web-Gwinta dla 10 osób), ale wystarczający dla hobby-projektu. Możliwe, że coś podobnego istnieje — do zweryfikowania (open question).
+Każdy PR w loxley-cards jest implementowany i review'owany przez tę samą osobę (Daniel) w tej samej lokalnej sesji Claude. Brak zewnętrznego punktu kontrolnego oznacza: (1) confirmation bias — implementer i reviewer dzielą ten sam kontekst, regresje przechodzą niezauważone, (2) brak widocznego artefaktu na PR — lokalna sesja nie zostawia śladu na GitHubie, co uniemożliwia retrospekcję i jest niewidoczne dla zewnętrznych obserwatorów.
+
+Driver podwójny: realna jakość (wyłapanie regresji których lokalna sesja nie złapie) + certyfikacja 10xChampion (M5L2 SDK + M5L3 pipeline, deadline 2026-07-05) — artefakt review na PR jest wymaganym dowodem.
+
+Obecne obejście: review w głowie Daniela + lokalna sesja Claude. Koszt: zero separacji ról, zero trwałego artefaktu.
 
 ## User & Persona
 
-**Primary persona:** Pracujący dorosły, fan Gwinta z czasów W3. Ma 15–20 minut wolnego wieczorem (po pracy, w przerwie, w podróży). Chce szybkiej, taktycznej partii bez overheadu.
+**Primary persona:** Daniel — solo developer, jedyny contributor w publicznym repo loxley-cards. Potrzebuje zewnętrznego review point w swoim workflow: agent AI jako niezależny reviewer na każdym PR, zostawiający strukturalną opinię (rubryka, werdykt, komentarz) widoczną na GitHubie.
 
-**Scope:** Najpierw ja sam (single user), z otwartymi drzwiami na paczkę znajomych (5–10 osób) i potencjalnie szerszą niszę w przyszłości.
+## Access Control Changes
 
-## Access Control
-
-**Auth method:** Username + hasło. Pierwsza wizyta = rejestracja (username + hasło), kolejne = login. Hasło hashowane BCryptem, sesja po zalogowaniu w JWT (cookie HTTPOnly). Bez OAuth, bez magic-linka, bez password reset (brak emaila = jak userek zapomni hasła, kontakt manualny i reset hash w DB).
-
-**Role model:** Flat — wszyscy użytkownicy równi, jeden typ konta, brak podziału na role. Najprostszy model wystarczający dla MVP.
+Brak zmian w modelu uwierzytelniania aplikacji — obecny model (username + BCrypt + JWT) zachowany. AI reviewer działa jako GitHub Actions workflow z tokenami (GITHUB_TOKEN do komentowania PR, Anthropic API key do wywołań Claude) — poza istniejącym auth użytkowników aplikacji.
 
 ## Success Criteria
 
 ### Primary
 
-Użytkownik otwiera URL, loguje się (username + hasło), wybiera etap kampanii, rozgrywa pełną partię vs bot (best-of-3, mechanika rzędów), widzi wynik i progres jest zapisany — następny etap odblokowany.
+Otwarcie PR na main automatycznie generuje komentarz od bota z 5-wymiarową rubryką (poprawność, idiomatyczność Java/Spring, złożoność, testy, bezpieczeństwo — każde 1-10 z uzasadnieniem) + summary + werdykt (APPROVED / NEEDS_ATTENTION / REJECTED).
 
 ### Secondary
 
-Użytkownik widzi swój własny postęp w kampanii (osobisty profil z listą ukończonych i odblokowanych etapów). Brak in-app porównywania wyników z innymi — pochwalenie się znajomym = pokazanie ekranu / screenshot.
+Screen pipeline (zielony job) + screen komentarza na PR = dowód do formularza certyfikacji Champion.
 
 ### Guardrails
 
-- Progres nie ginie — jeśli użytkownik wygrał etap, po powrocie następnego dnia jest odblokowany. Zero utraty danych między sesjami.
+- Istniejący `ci.yml` nie może ulec żadnej zmianie — zero modyfikacji istniejącego pipeline.
+- Runtime backend/frontend bez zmian — zmiana dotyczy wyłącznie CI layer.
+- Gate jest informacyjny (komentarz), nie blokujący merge — w MVP brak status checka blokującego.
 
-## Functional Requirements
+## Scope of Change
 
-- FR-001: Gracz może założyć konto (username + hasło) i zalogować się (username + hasło). Priority: must-have
-  > Socrates: Świadoma decyzja w F-03 setup — magic-link wymagałby Resend + verified domeny (Daniel ma Resend pod inną domeną na free planie). Username + hasło = zero zależności od emaila, kosztem braku password reset (akceptowalne dla 5–10 znajomych; manual cleanup w DB jak ktoś zapomni hasła).
-- FR-002: Gracz może przeglądać kampanię (10 etapów, liniowe odblokowanie). Priority: must-have
-  > Socrates: Brak kontr-argumentu; 10 liniowych etapów wystarczy na MVP.
-- FR-003: Gracz może rozpocząć partię na odblokowanym etapie. Priority: must-have
-  > Socrates: Brak kontr-argumentu; predefiniowany deck per etap OK na MVP, deck building to v2.
-- FR-004: Gracz może zagrać kartę z ręki do właściwego rzędu (auto-placement lub wybór rzędu). Priority: must-have
-  > Socrates: Brak kontr-argumentu; w oryginale taktyka wynika z KIEDY grać, nie GDZIE.
-- FR-005: Gracz może spasować (zakończyć swoją turę w rundzie). Priority: must-have
-  > Socrates: Brak kontr-argumentu; pas to core mechanika Gwinta.
-- FR-006: Gracz może aktywować zdolność dowódcy (leader ability) — raz na partię. Priority: must-have
-  > Socrates: Brak kontr-argumentu; leader ability to kluczowy moment decyzyjny.
-- FR-007: Gracz może wybrać rząd dla kart wymagających wyboru (np. horn). Priority: must-have
-  > Socrates: Brak kontr-argumentu; kilka takich kart w decku wystarczy jako punkt taktyczny.
-- FR-008: Gracz widzi wynik rundy i partii (best-of-3). Priority: must-have
-  > Socrates: Brak kontr-argumentu; wynik rundy to feedback i closure.
-- FR-009: Gracz może wrócić do kampanii po partii, progres zapisany (etap odblokowany). Priority: must-have
-  > Socrates: Brak kontr-argumentu; proste odblokowanie = mniej frustracji na MVP.
-- FR-010: Gracz może zrestartować przegrany etap. Priority: must-have
-  > Socrates: Brak kontr-argumentu; single-player bez limitów restartów to norma.
-- FR-011: Gracz może ponownie grać ukończone etapy. Priority: must-have
-  > Socrates: Brak kontr-argumentu; replay daje swobodę i fun bez presji.
-- FR-012: Gracz może się wylogować. Priority: must-have
-  > Socrates: Brak kontr-argumentu; logout to higiena — musi być.
+- FR-001: [new] Workflow `ai-review.yml` triggerowany na `pull_request` do main uruchamia job AI review. Priority: must-have
+  > Sokrates: Rozważono kontrargument: "koszt API na każdy push do PR — przy 5-10 pushach na PR koszt Sonnet może być nieproporcjonalny." Rozwiązanie: zachowano; w MVP akceptowalny koszt przy niskim wolumenie PR (solo dev). Jeśli koszt zacznie boleć → v2: concurrency cancel-in-progress lub manual trigger.
+- FR-002: [new] Skrypt `review.js` (Vercel AI SDK 6 + Zod schema) wywołuje Claude Sonnet 4.6 z diff + PR metadata (title, body). Priority: must-have
+  > Sokrates: Rozważono kontrargument: "duży diff może przekroczyć context window." Rozwiązanie: zachowano; typowe PR w loxley-cards to małe-średnie diffy (jednorazowe feature/fix). Jeśli diff jest za duży → graceful failure (agent loguje warning, workflow nie crashuje). Truncation/chunking to v2.
+- FR-003: [new] Agent ocenia diff wg 5-wymiarowej rubryki (poprawność, idiomatyczność Java/Spring, złożoność, testy, bezpieczeństwo) — każde kryterium 1-10 z uzasadnieniem — i emituje werdykt APPROVED / NEEDS_ATTENTION / REJECTED. Priority: must-have
+  > Sokrates: Rozważono kontrargument: "ocena 1-10 jest subiektywna i niestabilna — LLM może dać 7/10 raz, a 5/10 następnym razem." Rozwiązanie: zachowano; skala daje strukturę komentarzowi i czytelny at-a-glance sygnał. Niestabilność akceptowalna przy informacyjnym gate (nie blokującym). Jeśli precyzja zacznie mieć znaczenie → v2: promptfoo evaluator z ground-truth examples.
+- FR-004: [new] Workflow postuje komentarz markdown na PR przez GitHub API — tabela ocen + summary + werdykt. Priority: must-have
+  > Sokrates: Rozważono kontrargument: "komentarz od bota wygląda jak spam — alert fatigue po kilku PR." Rozwiązanie: zachowano; to jedyny artefakt review, bez niego pipeline nie ma outputu. Mitygacja: zwięzły format (tabela, nie wall of text), jeden komentarz per run. Jeśli spam → v2: collapsible details lub update istniejącego komentarza zamiast nowego.
+- FR-005: [preserved] Istniejący `ci.yml` (backend `mvnw verify` + frontend `npm run build`) działa bez zmian. Priority: must-have
+  > Sokrates: Brak kontrargumentu; izolacja ci.yml to świadoma decyzja — zero ryzyka regresji istniejącego pipeline.
 
 ## User Stories
 
-### US-01: Rozgrywka partii kampanii
+### US-01: AI review na PR
 
-**Given:** Gracz jest zalogowany i widzi ekran kampanii z odblokowanym etapem
-**When:** Klika "Graj" przy etapie, rozgrywa karty w rundach (best-of-3), pasuje lub gra do końca każdej rundy
-**Then:** Widzi wynik partii; jeśli wygrał — następny etap odblokowany; progres zapisany trwale
+- **Given** Daniel otwiera PR na branch `main` w repo loxley-cards
+- **When** GitHub Actions automatycznie odpala job `ai-review`
+- **Then** na PR pojawia się komentarz od bota z tabelą 5 ocen (1-10 + uzasadnienie) + summary + werdykt (APPROVED / NEEDS_ATTENTION / REJECTED); Daniel czyta komentarz i decyduje o merge
 
-### US-02: Logowanie username + hasłem
+## Business Logic Changes
 
-**Given:** Gracz otwiera URL i nie jest zalogowany
-**When:** Podaje username + hasło (rejestracja przy pierwszym wejściu, login przy kolejnych) i klika "Zagraj"
-**Then:** Ląduje na ekranie kampanii ze swoim progresem; sesja trzymana w cookie/JWT
+Brak zmiany logiki domenowej. Jest to zmiana infrastrukturalna/techniczna — nowy CI workflow (ai-review.yml) + skrypt Node (review.js). Logika gry (scoring, abilities, kampania, auth) pozostaje bez zmian.
 
-## Business Logic
+## Constraints & Compatibility
 
-Gra wymusza taktyczne zarządzanie ograniczoną ręką kart w 3 rundach (best-of-3), gdzie zwycięzca rundy to gracz z wyższą sumą siły w rzędach close/ranged/siege po zastosowaniu modyfikatorów z pogody / dowódcy / efektów abilities, a wygrana partii odblokowuje kolejny etap kampanii.
-
-**Inputy reguły:** Karty zagrane przez gracza i bota w 3 rzędy (każda karta ma bazową siłę) + aktywne modyfikatory: pogoda (obniża siłę rzędu do 1), horn (podwaja siłę rzędu), leader ability (efekt jednorazowy na partię), efekty abilities kart (spy, medic, muster, tight bond itp. — pełny zestaw z Witchera 3).
-
-**Output reguły:** Wynik rundy (wygrana/przegrana/remis na podstawie sumy siły) → wynik partii (best-of-3: 2 wygrane rundy = zwycięstwo) → progres kampanii (odblokowanie następnego etapu).
-
-**Zestaw modyfikatorów na MVP:** Pełny zestaw abilities z Witchera 3 — pogoda, horn, spy, medic, muster, tight bond, leader abilities. Bot stosuje te same reguły co gracz.
+- Brak integracji do zachowania — zmiana nie dotyka żadnych istniejących integracji, API ani danych.
+- Brak migracji danych — zero zmian w schemacie DB lub danych.
+- Jedyne nowe zależności zewnętrzne: ANTHROPIC_API_KEY (nowy GitHub Secret) + GITHUB_TOKEN (wbudowany).
+- Istniejący `ci.yml` nie może być modyfikowany — izolacja workflow jest twarda zasadą.
+- Kompatybilność wsteczna: n/a — nowy workflow, brak istniejących konsumentów.
 
 ## Non-Functional Requirements
 
-- Szybkość bota: odpowiedź bota na ruch gracza < 2 sekundy. Bot jest deterministyczny (scoring-based), więc spełnienie jest trywialne.
-- Prywatność: brak obowiązkowo zbieranych danych osobowych — login to username (cokolwiek user wpisze), hasło hashowane (BCrypt). Pole `email` w encji `User` jest opcjonalne (nullable; unique constraint zostaje, ale Postgres traktuje wiele wierszy z `NULL` jako distinct, więc anonymous userzy bez emaila współistnieją bez kolizji — decyzja F-03 plan-review 2026-06-13 dla H2 portability) — zachowane na przyszłość (potencjalny password reset / notyfikacje), nieużywane w MVP. Zero tracking, zero analityki, zero cookies marketingowych w MVP.
-- Target platform: desktop/laptop (duży ekran). Mobile jest świadomym non-goal — 6 rzędów planszy + ręka kart + UI dowódcy/grave/deck wymaga dużego ekranu dla czytelności.
+- Czas wykonania workflow (checkout + diff + API call + post comment) poniżej 2 minut — dłużej oznacza, że Daniel merguje bez czytania komentarza.
+- Graceful failure — jeśli API call do Claude lub posting komentarza na PR failuje, workflow kończy się warning (nie error) i nie blokuje merge ani nie psuje statusu PR.
 
 ## Non-Goals
 
-- **Brak multiplayer (PvP online)** — MVP to wyłącznie gra vs bot. Tryb gracz vs gracz to przyszłość, nie MVP.
-- **Brak deck buildingu** — gracz nie składa własnego decku; każdy etap kampanii daje predefiniowany zestaw kart.
-- **Brak mobile / responsive** — desktop-only. Plansza z 6 rzędami + ręka + UI wymaga dużego ekranu.
-- **Brak rankingu / leaderboardu / porównywania wyników** — single-player kampania, bez social features.
-- **Brak generowania kart przez AI** — talie predefiniowane w JSON, ręcznie zaprojektowane.
-- **Brak wyboru dowódcy / frakcji** — w MVP: 1 leader, 1 frakcja. Wybór to v2.
+- **Brak status checka blokującego merge** — gate jest informacyjny (komentarz), nie blokujący. Wymaga decyzji "kiedy blokujemy" i ryzyka false-positive; v2.
+- **Brak labels ai-cr:passed/failed** — kosmetyka; v2.
+- **Brak promptfoo evaluator** — bramka regresji jakości promptów; potrzebna dopiero gdy częsty tuning rubryki; v2.
+- **Brak multi-model (haiku triage → sonnet escalation)** — optymalizacja kosztów; tylko gdy faktyczny koszt zacznie boleć; v2.
+- **Brak cost dashboard / onStepFinish monitoring** — basic logs w workflow output wystarczą na MVP; pełny dashboard v2.
+- **Brak tools dla agenta (readPlan, postPrComment jako tool)** — agent w MVP jest "scorerem" (structured output), nie "aktorem" (tool-calling); v2.
 
-## Forward: stretch-goals
+## Product Framing
 
-- AI-coach analizujący ruchy gracza po partii — priorytet #1 po MVP, jeśli zostanie czas. Nie blokuje MVP.
-
-## Product Framing (frontmatter)
-
-- product_type: web-app
-- target_scale.users: small (1–10 osób)
-- timeline_budget.mvp_weeks: 3
-- timeline_budget.hard_deadline: null
+- product_type: web-app (bez zmian — f-06 to infrastruktura CI)
+- target_scale.users: small (bez zmian — pipeline jest narzędziem dev, nie produktem dla użytkowników gry)
+- timeline_budget.delivery_weeks: 1
+- timeline_budget.hard_deadline: 2026-07-05 (deadline certyfikacji 10xChampion)
 - timeline_budget.after_hours_only: true
 
 ## Quality cross-check
 
-All 6 elements present. Status: accepted.
+All 7 brownfield elements present. Status: accepted.
