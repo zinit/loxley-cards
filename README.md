@@ -6,7 +6,7 @@
   <img src="frontend/src/assets/landing-hero.webp" alt="Loxley Cards — Sherwood Forest landing scene" width="640" />
 </p>
 
-**Live:** [loxley.cards](https://loxley.cards) · **Stack:** Spring Boot 4 / Java 21 + Vite + React + TypeScript · **Author:** [Daniel Łopuszko](mailto:daniel.loposzko@gmail.com)
+**Live:** [loxley.cards](https://loxley.cards) · **Stack:** Spring Boot 4 / Java 21 + Vite + React + TypeScript · **Author:** [Daniel Loposzko](mailto:daniel.loposzko@gmail.com)
 
 ---
 
